@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WorkBuddy</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="_magpie/bridge.js"></script>
+    <script src="data.js"></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <header class="top">
+      <div class="top-text">
+        <h1>账号</h1>
+        <p class="lede">统一管理 WorkBuddy 的账号、积分与签到状态。</p>
+      </div>
+      <div class="seg" id="seg" role="tablist"></div>
+    </header>
+
+    <section class="overview" id="overview"></section>
+
+    <section class="list">
+      <div class="list-head">
+        <h2>账号 <span class="count" id="count">0</span></h2>
+        <div class="list-tools">
+          <span class="stamp" id="stamp"></span>
+          <div class="density" id="density" role="group" aria-label="显示密度"></div>
+        </div>
+      </div>
+      <div class="cards" id="accounts"></div>
+    </section>
+
+    <section class="control" id="control">
+      <div class="ctl-left">
+        <span class="ctl-title">每日签到</span>
+        <span class="ctl-sub" id="ck-sub">读取中…</span>
+        <div class="ctl-accounts" id="ck-accounts"></div>
+      </div>
+      <div class="ctl-right">
+        <button type="button" class="btn" id="ck-now">立即签到</button>
+        <label class="time">
+          <span>时间</span>
+          <input type="time" id="ck-time" value="09:05" />
+        </label>
+        <label class="switch" title="开关每日签到">
+          <input type="checkbox" id="ck-toggle" />
+          <span class="track"><span class="knob"></span></span>
+        </label>
+      </div>
+    </section>
+
+    <section class="control" id="travel">
+      <div class="ctl-left">
+        <span class="ctl-title">猫猫旅行</span>
+        <span class="ctl-sub" id="tv-sub">读取中…</span>
+        <div class="ctl-accounts" id="tv-accounts"></div>
+      </div>
+      <div class="ctl-right">
+        <button type="button" class="btn" id="tv-now">推进一步</button>
+        <label class="time">
+          <span>间隔</span>
+          <input type="number" id="tv-every" min="5" max="720" step="5" value="30" class="num" />
+          <span>分</span>
+        </label>
+        <label class="switch" title="开关自动旅行">
+          <input type="checkbox" id="tv-toggle" />
+          <span class="track"><span class="knob"></span></span>
+        </label>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <p class="foot-note">
+        余额与积分包为官方实时数据，快照 <span id="fetched">—</span> 更新；签到由上方开关控制，
+        magpie 在那之后的一次加载或查余额时执行。明细用 <code>wbkit_usage</code>，成长计划用 <code>wbkit_growth</code>，
+        批量导入用 <code>wbkit_pool</code>。
+      </p>
+    </footer>
+  </body>
+</html>

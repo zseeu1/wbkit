@@ -1,0 +1,16 @@
+wbkit 打包了以下 MIT 许可的第三方代码：
+
+vendor/workbuddy.mjs
+  @magpie-community/opencode-workbuddy-auth 0.1.41
+  https://github.com/magpie-community/plugins/tree/main/packages/workbuddy
+  Copyright (c) magpie-community contributors — MIT
+
+lib/growth.mjs
+  magpie-workbuddy-growth-core 1.0.0 (growth.mjs)
+  https://github.com/connoryang331/magpie-workbuddy-growth
+  Copyright (c) connoryang331 — MIT
+
+lib/pools.mjs, lib/importer.mjs, lib/store.mjs, lib/region.mjs, lib/snapshot.mjs, lib/options.mjs, lib/wb.mjs
+  magpie-workbuddy-pool 1.0.3
+  https://github.com/xiaoli0412/magpie-workbuddy-pool
+  Copyright (c) xiaoli0412 — MIT

@@ -1,0 +1,66 @@
+{
+  "name": "wbkit",
+  "version": "0.1.0",
+  "description": "WorkBuddy 全家桶：一个 magpie 插件做完供应商登录、账号池导入、积分余额与到期、每日签到、成长计划与官方用量。",
+  "type": "module",
+  "main": "./index.mjs",
+  "exports": "./index.mjs",
+  "files": [
+    "index.mjs",
+    "lib",
+    "vendor",
+    "page",
+    "tools",
+    "scripts",
+    "README.md",
+    "NOTICE"
+  ],
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "workbuddy",
+    "codebuddy",
+    "magpie",
+    "magpie-plugin"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test test/",
+    "snapshot": "node tools/snapshot.mjs"
+  },
+  "magpie": {
+    "icon": "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%20width%3D%2232%22%20height%3D%2232%22%3E%20%3Cdefs%3E%20%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%2300cfa8%22%2F%3E%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%2317be6b%22%2F%3E%20%3C%2FlinearGradient%3E%20%3C%2Fdefs%3E%20%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%229%22%20fill%3D%22url%28%23g%29%22%2F%3E%20%3Cpath%20d%3D%22M7.4%2010.6%2011%2022l5-8.4%205%208.4%203.6-11.4%22%20fill%3D%22none%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%222.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%20%3C%2Fsvg%3E",
+    "maxConcurrency": 8,
+    "page": {
+      "title": "WorkBuddy",
+      "titles": {
+        "zh": "WorkBuddy",
+        "en": "WorkBuddy"
+      },
+      "file": "page/index.html",
+      "icon": "page/icon.svg"
+    },
+    "permissions": [
+      "usage:summary",
+      "providers:list"
+    ],
+    "options": {
+      "autoCheckin": false,
+      "checkinAt": "09:05",
+      "autoTravel": false,
+      "travelEveryMin": 30,
+      "density": "card"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zseeu1/wbkit.git"
+  },
+  "homepage": "https://github.com/zseeu1/wbkit#readme",
+  "bugs": {
+    "url": "https://github.com/zseeu1/wbkit/issues"
+  }
+}

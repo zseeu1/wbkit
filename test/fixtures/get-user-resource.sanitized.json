@@ -1,0 +1,64 @@
+{
+ "code": 0,
+ "msg": "OK",
+ "data": {
+  "Response": {
+   "Data": {
+    "Accounts": [
+     {
+      "PackageName": "示例包 A",
+      "CapacityUnit": "credits",
+      "CapacitySize": 100,
+      "CapacityRemain": 60,
+      "CapacityUsed": 40,
+      "CycleStartTime": "2026-09-28 00:00:00",
+      "CycleEndTime": "2026-10-28 23:59:59",
+      "DeductionEndTime": 1793200000000,
+      "Status": 1,
+      "FeeType": 1,
+      "Region": "ap-others"
+     },
+     {
+      "PackageName": "示例包 B",
+      "CapacityUnit": "credits",
+      "CapacitySize": 50,
+      "CapacityRemain": 50,
+      "CapacityUsed": 0,
+      "CycleStartTime": "2026-09-28 00:00:00",
+      "CycleEndTime": "2026-11-28 23:59:59",
+      "DeductionEndTime": 1796000000000,
+      "Status": 1,
+      "FeeType": 1,
+      "Region": "ap-others"
+     },
+     {
+      "PackageName": "示例包 A",
+      "CapacityUnit": "credits",
+      "CapacitySize": 10,
+      "CapacityRemain": 0,
+      "CapacityUsed": 10,
+      "CycleStartTime": "2026-09-28 00:00:00",
+      "CycleEndTime": "2026-10-29 23:59:59",
+      "DeductionEndTime": 1793300000000,
+      "Status": 1,
+      "FeeType": 1,
+      "Region": "ap-others"
+     },
+     {
+      "PackageName": "已结束的包",
+      "CapacityUnit": "credits",
+      "CapacitySize": 99,
+      "CapacityRemain": 99,
+      "CapacityUsed": 0,
+      "CycleStartTime": "2026-09-28 00:00:00",
+      "CycleEndTime": "2020-01-01 00:00:00",
+      "DeductionEndTime": 1577836800000,
+      "Status": 1,
+      "FeeType": 1,
+      "Region": "ap-others"
+     }
+    ]
+   }
+  }
+ }
+}
