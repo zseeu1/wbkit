@@ -1,111 +1,176 @@
 # wbkit
 
-WorkBuddy 全家桶：**一个 magpie 插件**做完供应商登录、账号池、积分余额与到期、每日签到、成长计划、官方用量。装一个，不再装三个。
+**一个 magpie 插件，把 WorkBuddy 的事一次做完。** 供应商与登录、账号池导入、积分余额与到期、每日签到、猫猫旅行、官方用量——装一个，不再装三个。
 
-## 装
-
-```bash
-magpie plugin add ./wbkit            # 文件夹就地加载（在仓库上一级目录执行）
-magpie plugin use wbkit workbuddy                      # 让它接管 provider id
-magpie quota                                           # 应看到每个账号的积分余额与到期
+```
+WorkBuddy (19 models)  signed in as …        ← 供应商由本插件提供
+插件 → WorkBuddy                              ← 账号页：余额、积分包、签到、旅行
+wbkit_pool / wbkit_growth / wbkit_usage       ← 给 agent 的三个工具
 ```
 
-`vendor/workbuddy.mjs` 是 `@magpie-community/opencode-workbuddy-auth` 0.1.41 的原样副本（MIT），所以 `workbuddy` / `workbuddy-ai` 两个 provider、三种登录方式（浏览器 OAuth / 桌面 App 文件 / API Key）、续期与企业头全部照旧，agent 侧不需要改任何 `workbuddy/模型` 的写法。
+## 为什么是「一个」
 
-## 它替掉的东西
+原来要装三样东西才凑齐：`opencode-workbuddy-auth`（供应商 + 登录）、`magpie-workbuddy-pool`（账号池导入）、`magpie-workbuddy-growth`（签到与成长计划）。它们各写各的，登录态凑巧都在 `plugin-auth.json` 里才没有打架。
 
-| 以前 | 现在 |
+wbkit 把它们收进一个包，按 magpie 自己的钩子分工：
+
+| 钩子 / 位置 | 负责什么 | 显示在哪 |
+|---|---|---|
+| `provider` / `auth` | 两个 provider（国内 / 国际）、三种登录、续期、企业头 | 供应商页 |
+| `auth.usage` | 余额、积分包、到期 | 供应商账号卡、`magpie quota` |
+| `auth.checkin` | 每日签到 | 账号卡、签到记录 |
+| `tool` | 账号池导入、成长计划、用量明细 | 任何 agent（MCP） |
+| `page` | 账号总览、签到与旅行开关 | 侧栏「WorkBuddy」 |
+
+## 安装
+
+```bash
+magpie plugin add github:zseeu1/wbkit
+magpie plugin use wbkit workbuddy        # 让本插件接管 provider id
+magpie quota                             # 能看到每个账号的余额与到期就对了
+```
+
+开发时用文件夹就地加载，改完关掉再打开插件即可：
+
+```bash
+magpie plugin add ./wbkit
+```
+
+装好后在 设置 → 插件 里，本插件应当只有一行；`workbuddy` / `workbuddy-ai` 由它提供。
+
+## 登录
+
+三种方式，都不需要复制粘贴令牌：
+
+- **浏览器登录**：`magpie plugin login workbuddy`，打开 WorkBuddy 自己的登录页，扫码/账号密码都行；
+- **桌面登录态**：直接用 WorkBuddy 桌面 App 已登录的账号（读它的认证文件；5.6 起该文件加密，此时改用浏览器登录）；
+- **API Key**：在 WorkBuddy 的 keys 页面生成，登录时选 API Key 方式填入。
+
+三种方式在 `magpie plugin login workbuddy` 里按提示选；应用里则显示成供应商页上的按钮。
+
+一个 provider 可以登多个账号：第一个存在 `workbuddy`，之后的是 `workbuddy#<摘要>`。想批量导入就往下看 `wbkit_pool`。
+
+## 每日签到
+
+页面底部有「每日签到」：开关 + 时间（默认 09:05，北京时间）+「立即签到」按钮。
+
+| 触发 | 说明 |
 |---|---|
-| `@magpie-community/opencode-workbuddy-auth`（provider/登录/续期） | vendor 进本包 |
-| `magpie-workbuddy-pool`（导入/区域/健康/提前续期/账号页） | `wbkit_pool` 工具 + 本包 page |
-| `magpie-workbuddy-growth(-core)`（任务树/旅行/连登/开学季） | `wbkit_growth` 工具；签到改由 `auth.checkin` 承担 |
-| wb-switch 的缓存文件（用量/签到/旅行/通知） | **运行时不再依赖**；数据全部现取官方接口 |
+| 插件加载 | 开 magpie、改插件选项、开关插件 |
+| `auth.usage` | 打开供应商页、跑 `magpie quota` |
+| 「立即签到」 | 不等时间，立刻跑一轮 |
 
-## 三个钩子
+一天一次：签到成功的账号当天跳过；结果写进 `~/.config/magpie/wbkit-checkin.json`，页面和账号卡都会显示。失败会在页面标红并给出原因（`要验证码 / 失败 / 无资格`），点「立即签到」重试。
 
-- **`auth.refresh` / `refreshLead`（5 分钟）**：沿用上游，magpie 在 access 到期前 5 分钟续期并写回。
-- **`auth.usage`**：`POST {base}/v2/billing/meter/get-user-resource` → 按 `PackageName` 分组的积分窗口，`balance` / `limit` / `runsOutAt`。显示在供应商账号卡与 `magpie quota`。60 秒/账号缓存；401/403 抛 `signIn: "expired"`。
-- **`auth.checkin`**：`POST {base}/v2/billing/meter/daily-checkin`，映射成 `claimed / done / captcha / ineligible / failed`。magpie 每个北京日为每个账号调一次；`options.takeOverCheckin=false` 可整体让位给外部工具。
+magpie 内置的「预热与签到」如果也开着同一供应商，两边调用的是同一个 `auth.checkin`，第二次只会拿到「今天已签到」，不会重复领。
 
-## 三个工具（经 `/mcp/magpie/tools` 给所有 agent）
+## 猫猫旅行
+
+第二张控制卡：显示每只猫的状态（还没有猫 / 在家待着 / 出门旅行中 / 已到达可领奖、今日是否到上限），带间隔（默认 30 分钟）和开关。
+
+走动是**一次一步**：没猫就领养，`idle` 派出，`arrived` 领奖，`traveling` 跳过。触发点与签到相同，另有「推进一步」按钮即时触发。
+
+## 三个工具
+
+装好后任何 agent 都能调（magpie 通过 `/mcp/magpie/tools` 暴露）：
 
 ```
 wbkit_pool    --action import|list|check  [--path <导出 JSON>] [--uid <前缀>] [--probe true|false]
-wbkit_growth  --action status|task|school|travel|streak|daily  [--code <任务>] [--only <任务>] [--lottery true]
+wbkit_growth  --action status|task|school|travel|streak|daily  [--code …] [--only …] [--lottery true]
 wbkit_usage   --period 1d|7d|30d  [--uid <前缀>] [--detail <0-1000>]
 ```
 
-`wbkit_pool import` 不指定 `path` 时先扫池目录 `~/.config/magpie/workbuddy-pool/*.json`，再退回 `~/.wb-switch/accounts.json`；导入幂等，账号名优先用导出里的昵称。
+- `wbkit_pool import` 不指 `path` 时先扫 `~/.config/magpie/workbuddy-pool/*.json`，再退回 `~/.wb-switch/accounts.json`；导入幂等，账号名优先用导出里的昵称。
+- `wbkit_usage` 只返回 `requestId / model / credit / client / requestTime`，**接口里的提示词原文一个字节都不留**。
+- `wbkit_growth` 只对国内个人账号（无 `enterpriseId`）生效。
 
-## 数据来源（都是官方接口，实测）
+终端里同样能调：
 
-| 数据 | 端点 |
-|---|---|
-| 积分余额/到期 | `POST https://copilot.tencent.com/v2/billing/meter/get-user-resource`（body `{}`）→ `data.Response.Data.Accounts[]` |
-| 请求用量 | `POST https://www.workbuddy.cn/billing/meter/get-user-request-usage`（`{startTime,endTime,pageNum,pageSize}`）→ `data.data[]` |
-| 每日签到 | `POST https://copilot.tencent.com/v2/billing/meter/daily-checkin` |
-
-口径校验：两个账号的余额、积分包数与 7 天用量，和 wb-switch 自己的显示逐项对上（示例仓库里不写具体数值）。
-
-**不采集**：用量接口返回里的 `input` / `inputTrunc`（提示词原文）。`page/data.js` 只写昵称、区域、到期时间这类元数据，不含 `access` / `refresh` 令牌。
+```bash
+magpie tool wbkit_usage --period 7d --detail 20
+magpie tool wbkit_growth --action status
+```
 
 ## 页面
 
-侧栏「WorkBuddy」，版面照 wb-switch 的账号页：顶部汇总（可用积分 / 账号 / 最近作废）、全部·国内版·国际版分档、每张卡是大号余额 + 每个积分包的余额与到期进度条（≤2 天橙、≤10 天浅橙、其余绿）+ 登录态倒计时。
+侧栏「WorkBuddy」，版面照 wb-switch 的账号页：
 
-**显示密度**：账号标题右边有「卡片 / 紧凑」切换。账号多的时候用紧凑模式，一行一个：昵称 + 区域 + 余额 + 包数 + 最近作废 + 登录态剩余 + 状态徽标，一屏能看几十行。选择记在插件 options 的 `density`。
+- 顶部汇总：可用积分 / 账号数 / 最近作废；
+- 分档：全部 · 国内版 · 国际版；
+- **两种密度**：卡片（大号余额 + 每个积分包的进度条）与紧凑（一行一个账号，账号多了也不占屏）；
+- 底部：签到与旅行的开关、时间、以及「立即」按钮。
 
-页面在沙盒里没有网络，数据来自插件加载时写的 `page/data.js`（`globalThis.WBKIT`）：插件在加载时用与 `auth.usage` 同一个官方接口取一次余额与积分包，只写昵称、区域、余额、到期这类字段，令牌一个都不进快照。
+页面跑在沙盒 iframe 里（`connect-src 'none'`），既不能联网也读不到账号，所以数据来自插件加载时写的 `page/data.js`——只含昵称、区域、余额、到期这类字段，**不含任何令牌**。
 
-手动重生成快照：`node tools/snapshot.mjs`。
+## 选项
 
-## 图标
-
-`page/icon.svg` 的青绿取自 WorkBuddy 自己的 app 图标（`WorkBuddy.app/Contents/Resources/icon.icns` 主色 `#00c0a0` → `#17be6b`），白 W 叠在渐变圆角块上；`package.json` 里 `magpie.icon` 是同一张图的 data URI。
-
-## 猫猫旅行（页面上的开关）
-
-第二张控制卡是「猫猫旅行」：显示每个账号的宠物状态（在家待着 / 出门旅行中 / 已到达可领奖 / 还没有猫、今日是否到上限），带一个间隔（默认每 30 分钟推进一步）和开关。
-
-走动逻辑复用 growth 的 `runTravelOnce`：**一次只推进一步**——没有猫就领养，`idle` 派出，`arrived` 领奖，`traveling` 跳过。触发点与签到相同（插件加载 / 查余额 / 页面「推进一步」按钮），结果记在 `~/.config/magpie/wbkit-checkin.json` 的 `travel.accounts`。
-
-## 每日签到（页面上的开关）
-
-页面底部有「每日签到」开关和一个时间框（默认 09:05，北京时间）。开关写进插件自己的 options（`autoCheckin` / `checkinAt`），不需要去命令行，也不依赖 magpie 内置的「预热与签到」。
-
-三个触发点：
-
-1. 插件加载（开 magpie、改插件选项、开关插件）；
-2. 每次 magpie 查这个账号余额（`auth.usage`）——打开供应商页或跑 `magpie quota`；
-3. 页面上的 **「立即签到」** 按钮：它只把 `pendingCheckin.at` 写进插件 options，宿主随即重载插件，加载时看到比上次新的时间戳就强制跑一轮（不等到点）。
-
-失效了怎么办：页面底部会显示「上次失败：<账号> <原因> <时间>」，原因分 `要验证码 / 失败 / 无资格`，点「立即签到」重试即可；`captcha` 类要自己在 WorkBuddy 客户端里签一次。结果记在：
-
-- `~/.config/magpie/wbkit-checkin.json`（每个账号的日期 / 结果 / 积分）
-- 页面卡片上的签到徽标与页脚状态
-- `magpie quota` 的供应商账号卡
-
-另外仍然兼容 magpie 自己的调度：`auth.checkin` 是标准钩子，如果在 设置 → 预热与签到 里也开了，两边都会走到同一个实现，第二次返回 `done`，不会重复领。
-
-## 维护
+页面上的开关都写进插件 options，也可以命令行改：
 
 ```bash
+magpie plugin options wbkit '{"autoCheckin":true,"checkinAt":"09:05","autoTravel":true,"travelEveryMin":30,"density":"card"}'
+```
+
+| 键 | 默认 | 含义 |
+|---|---|---|
+| `autoCheckin` | `false` | 每日签到开关 |
+| `checkinAt` | `09:05` | 北京时间，到点后才签 |
+| `autoTravel` | `false` | 猫猫旅行自动推进开关 |
+| `travelEveryMin` | `30` | 旅行推进间隔（最小 5） |
+| `density` | `card` | 页面密度：`card` / `compact` |
+| `tab` | `all` | 页面分档：`all` / `cn` / `intl` |
+| `pendingCheckin` / `pendingTravel` | — | 页面按钮写入的即时请求，插件消费后不再触发 |
+
+## 数据来源
+
+全部现取官方接口，**不读任何第三方缓存**：
+
+| 数据 | 端点 |
+|---|---|
+| 余额 / 积分包 | `POST https://copilot.tencent.com/v2/billing/meter/get-user-resource`（body `{}`） |
+| 请求用量 | `POST https://www.workbuddy.cn/billing/meter/get-user-request-usage`（国际版 `www.workbuddy.ai` 同构） |
+| 每日签到 | `POST https://copilot.tencent.com/v2/billing/meter/daily-checkin` |
+| 成长 / 旅行 | `copilot.tencent.com` 的 activity 接口（见 `lib/growth.mjs`） |
+
+请求头照抄 WorkBuddy 桌面客户端；余额接口按 `CycleEndTime` 过滤已结束的包，按 `PackageName` 合并，`DeductionEndTime` 超过两年视为长期有效（官方有 2049 这类占位值）。
+
+## 目录
+
+```
+index.mjs            插件入口：只导出两个插件函数，其余挂 _internal
+vendor/workbuddy.mjs 上游社区插件 0.1.41 原样（MIT，见 NOTICE）
+lib/quota.mjs        auth.usage：余额 / 积分包 / 到期
+lib/checkin.mjs      auth.checkin：每日签到
+lib/schedule.mjs     签到的调度与状态（一天一次、手动请求消费）
+lib/pet.mjs          猫猫旅行：状态查询与推进
+lib/usage.mjs        官方用量：分页扫描 + 按天/模型聚合
+lib/growth.mjs       成长计划（点任务树、开学季、连登、旅行原语）
+lib/api.mjs          billing 接口与请求头（余额 / 用量 / 签到共用）
+lib/{pools,importer,store,region,wb,snapshot}.mjs   账号池：归一化、导入、原子写、区域判定、探针、快照工具
+lib/view.mjs         页面快照（白名单字段，无令牌）
+lib/tools.mjs        三个工具的实现
+page/                index.html / app.js / style.css / icon.svg（data.js 生成，不入库）
+scripts/sync-upstream.mjs   跟版上游并校验导出
+tools/{import,verify,snapshot}.mjs  命令行：导入、巡检、重生成快照
+test/                node --test，24 条
+```
+
+## 开发
+
+```bash
+node --test test/            # 24 条：区域、导入幂等、余额口径、签到判定、用量聚合、快照不含令牌
 node scripts/sync-upstream.mjs        # 从本机已装的社区插件更新 vendor
 node scripts/sync-upstream.mjs --npm  # 或从 npm 拉最新版
-npm test                              # node --test，15 个用例
+node tools/snapshot.mjs      # 手动重生成 page/data.js
 ```
 
-`sync-upstream.mjs` 会校验 `WorkBuddyAuthPlugin` / `WorkBuddyAIAuthPlugin` / `_internal` 三个导出仍在，上游改结构时先报警。
+`sync-upstream.mjs` 会校验上游仍然导出 `WorkBuddyAuthPlugin` / `WorkBuddyAIAuthPlugin` / `_internal`，上游改结构时先报警而不是静默挂掉。
 
-## 回滚
+## 边界
 
-```bash
-cp ~/.config/magpie/plugin-auth.json.pool.bak ~/.config/magpie/plugin-auth.json   # 需要时
-magpie plugin rm ./wbkit
-magpie plugin add github:xiaoli0412/magpie-workbuddy-pool
-magpie plugin add @magpie-community/opencode-workbuddy-auth
-```
+- **不做**切客户端登录态（WorkBuddy 桌面、CodeBuddy IDE/CLI、VS Code、JetBrains）：magpie 是网关，账号在 provider 层轮换，不需要改别人的文件。
+- **不做**会话复制 / 关联同步：那是 `~/.workbuddy` 下的 SQLite 与 JSONL 写入，风险和收益不成比例。
+- **不做**自动轮换：magpie 的 Routing 已经在做。
 
 ## 许可
 
-MIT。第三方代码与出处见 `NOTICE`。
+MIT。`vendor/workbuddy.mjs`、`lib/growth.mjs`、`lib/{pools,importer,store,region,snapshot,wb}.mjs` 来自 MIT 许可的社区项目，出处见 [NOTICE](NOTICE)。
