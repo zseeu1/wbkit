@@ -62,7 +62,13 @@ magpie plugin add ./wbkit
 
 一天一次：签到成功的账号当天跳过；结果写进 `~/.config/magpie/wbkit-checkin.json`，页面和账号卡都会显示。失败会在页面标红并给出原因（`要验证码 / 失败 / 无资格`），点「立即签到」重试。
 
-magpie 内置的「预热与签到」如果也开着同一供应商，两边调用的是同一个 `auth.checkin`，第二次只会拿到「今天已签到」，不会重复领。
+### 与 magpie 自带签到的关系
+
+WorkBuddy 是 magpie **原生支持签到**的供应商之一，它自己会把结果写在 `~/.config/magpie/workbuddy-checkin.json`（键是 `workbuddy|<uid>`，带 `credit` / `streak`），用量页那个「自动签到 / 立即签到」走的就是这条原生路径，**不依赖任何插件**。
+
+所以本插件的 `auth.checkin` 只做补位，并且默认让路：跑之前先看 `workbuddy-checkin.json`（原生）和 `plugin-checkin.json`（插件钩子）——任一本今天已有该账号的记录，就直接记 `done`、不发请求。页面会把来源标成 `magpie`。
+
+想让 magpie 原生那条独家负责，把页面「每日签到」关掉即可；两条都开也不会重复领。
 
 ## 猫猫旅行
 
