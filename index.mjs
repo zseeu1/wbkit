@@ -10,7 +10,6 @@
 // 注意：入口导出的每个函数都会被 magpie 当作一个插件调用，所以这里只导出两个
 // 插件函数，其余一律挂在 _internal 上。
 import { WorkBuddyAuthPlugin as UpCN, WorkBuddyAIAuthPlugin as UpAI } from './vendor/workbuddy.mjs'
-import { quotaFor } from './lib/quota.mjs'
 import { checkinFor } from './lib/checkin.mjs'
 import { TOOLS } from './lib/tools.mjs'
 import { writeView } from './lib/view.mjs'
@@ -77,12 +76,12 @@ const wrap = (Up) => async (input, options) => {
     auth: {
       ...hooks.auth,
       refreshLead: 5 * 60 * 1000,
-      // 每次查余额顺手看一眼签到（未到点/已签过会直接跳过）
+      // 余额与到期交给上游的 auth.usage（它带 401 自愈、企业额度、cycle/runsOut），
+      // 本插件只借这个时机跑签到与旅行
       usage: async (getAuth) => {
-        const value = await quotaFor(provider, getAuth)
         checkinTick(opts, 'usage')
         travelTick(opts, 'usage')
-        return value
+        return hooks.auth.usage(getAuth)
       },
       checkin: (getAuth) => checkinFor(provider, getAuth, opts),
     },

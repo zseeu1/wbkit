@@ -17,10 +17,10 @@ wbkit 把它们收进一个包，按 magpie 自己的钩子分工：
 | 钩子 / 位置 | 负责什么 | 显示在哪 |
 |---|---|---|
 | `provider` / `auth` | 两个 provider（国内 / 国际）、三种登录、续期、企业头 | 供应商页 |
-| `auth.usage` | 余额、积分包、到期 | 供应商账号卡、`magpie quota` |
+| `auth.usage` | 余额、额度窗口、cycle / 作废时间（沿用上游实现，含 401 自愈与企业额度） | 供应商账号卡、`magpie quota` |
 | `auth.checkin` | 每日签到 | 账号卡、签到记录 |
 | `tool` | 账号池导入、成长计划、用量明细 | 任何 agent（MCP） |
-| `page` | 账号总览、签到与旅行开关 | 侧栏「WorkBuddy」 |
+| `page` | 账号总览、逐包明细、签到与旅行开关 | 侧栏「WorkBuddy」 |
 
 ## 安装
 
@@ -126,7 +126,8 @@ magpie plugin options wbkit '{"autoCheckin":true,"checkinAt":"09:05","autoTravel
 
 | 数据 | 端点 |
 |---|---|
-| 余额 / 积分包 | `POST https://copilot.tencent.com/v2/billing/meter/get-user-resource`（body `{}`） |
+| 余额 / 额度窗口（账号卡） | 上游 `get-user-resource-summary`，带 401 自愈与企业额度 |
+| 逐包明细（页面） | `POST https://copilot.tencent.com/v2/billing/meter/get-user-resource`（body `{}`），按 `PackageName` 合并 |
 | 请求用量 | `POST https://www.workbuddy.cn/billing/meter/get-user-request-usage`（国际版 `www.workbuddy.ai` 同构） |
 | 每日签到 | `POST https://copilot.tencent.com/v2/billing/meter/daily-checkin` |
 | 成长 / 旅行 | `copilot.tencent.com` 的 activity 接口（见 `lib/growth.mjs`） |
