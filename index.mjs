@@ -10,7 +10,8 @@
 //
 // 注意：入口导出的每个函数都会被 magpie 当作一个插件调用，所以这里只导出一个
 // 插件函数，其余一律挂在 _internal 上。
-import { TOOLS } from './lib/tools.mjs'
+import { makeTools } from './lib/tools.mjs'
+import { adoptOrphans } from './lib/adopt.mjs'
 import { writeView } from './lib/view.mjs'
 import { maybeCheckin, consumePending } from './lib/schedule.mjs'
 import { maybeTravel, consumePendingTravel } from './lib/pet.mjs'
@@ -82,6 +83,20 @@ function tickLater(options, why) {
     })
 }
 
+// 账号键搬家：wbkit 早期版本按当时的 provider id 写成了 codebuddy#…，社区插件
+// 只认 workbuddy / workbuddy-ai，那些账号在 magpie 里就是「未登录」。加载时顺手
+// 搬一次，幂等；有 client 就走宿主的 auth.set，不重启也能看到。
+async function adoptTick(input) {
+  try {
+    const r = await adoptOrphans({ client: input?.client })
+    if (r.moved) log(`adopt(${r.by}): ${r.moved} 个账号 → ${r.served.cn}/${r.served.intl}`)
+    return r
+  } catch (e) {
+    log('adopt failed:', e?.message ?? e)
+    return { skipped: 'error' }
+  }
+}
+
 // 页面上的「导入账号 / 导出账号」也是先把请求写进 options，这里消费一次
 async function transferTick(options) {
   try {
@@ -98,13 +113,14 @@ async function transferTick(options) {
 
 export const WorkBuddyKit = async (input, options) => {
   const opts = options ?? {}
+  await adoptTick(input)
   await transferTick(opts)
   await checkinTick(opts, 'load')
   await travelTick(opts, 'load')
   await refreshPage(opts)
 
   return {
-    tool: TOOLS,
+    tool: makeTools(input?.client),
     // 每次走 WorkBuddy 的请求都顺带看一眼（内部 5 分钟一次 + 各自节流）
     'chat.headers': async (input) => {
       if (input?.model?.providerID === 'workbuddy') tickLater(opts, 'chat')
@@ -114,4 +130,4 @@ export const WorkBuddyKit = async (input, options) => {
 }
 
 // 给测试和 CLI 用；不是插件函数，magpie 不会调用它。
-export const _internal = { refreshPage, checkinTick, travelTick, transferTick }
+export const _internal = { refreshPage, checkinTick, travelTick, transferTick, adoptTick }

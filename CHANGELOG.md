@@ -1,5 +1,16 @@
 # 更新记录
 
+## v0.3.0
+
+**修：wbkit 导入的账号现在能被 `opencode-workbuddy-auth` 认到**
+- 账号键按 magpie 的实际规则落：第一个账号用裸键 `workbuddy`（默认账号），其余 `workbuddy#<后缀>`；前缀一律用已装社区插件声明的 id（`lib/keys.mjs`）
+- 新增 `lib/adopt.mjs`：插件加载时自动把孤儿键（`codebuddy#…`）搬到 `workbuddy` / `workbuddy-ai`，只改键名、token 一字不动、幂等；有宿主 `client` 时走 `auth.set`/`auth.remove`，magpie 不重启也能看到账号
+- 搬家时顺带把 `workbuddy-pool/state.json`、`wbkit-checkin.json`、`wbkit-transfer.json` 里的账号键一起改，余额/签到记录不会变孤儿
+- 导出改为按「域或 id」认账号，不再只认 `workbuddy*` 前缀；同一份导出里的重复 uid 只导一次
+- `wbkit_pool --action adopt` 保留，输出会说明是经宿主即时生效还是需要重启
+- 修：状态文件目录不存在时导入报 ENOENT（新机器上第一次导入），现在自己建目录
+- 测试 49 条（新增账号键规则、孤儿键搬家、导入后能被 `workBuddyAccounts` 认到）
+
 ## v0.2.4
 
 - 新增 `wbkit_pool --action adopt`：magpie 改名后账号可能挂在一个没有插件声明的 id 上（`codebuddy#…`），供应商因此显示未登录；这条命令把账号键改回**已装插件真正声明的 id**（`workbuddy` / `workbuddy-ai`），摘要不变

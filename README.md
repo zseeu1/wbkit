@@ -97,20 +97,38 @@ magpie tool wbkit_pool --action list
 magpie tool wbkit_pool --action check
 ```
 
-导入会写到这台机器**实际在用的 provider id** 上（`workbuddy#…` 或 `codebuddy#…`），所以 magpie 升级改名之后也不会导进一个没人认的键里。
+### 导入的账号怎么才能被社区插件认到
+
+magpie 的登录态键只有两种形状被认（`lib/keys.mjs` 写清楚了）：
+
+| 键 | 含义 |
+|---|---|
+| `workbuddy` | 这个 provider 的**第一个账号**，也是默认账号 |
+| `workbuddy#<后缀>` | 第二个及以后；后缀内容不参与判断 |
+
+插件宿主按「键等于 provider 或以 `provider#` 开头」找账号，社区插件的 `getAuth()` 再从中取；所以**前缀必须是它声明的 id**（`workbuddy` / `workbuddy-ai`）。wbkit 导入按这个规则落键：第一个账号用裸键，其余沿用各自的后缀。
+
+老版本的 wbkit 曾按当时的 id 写成 `codebuddy#…`，这些键在 magpie 的 provider 列表里是孤儿，社区插件看不到。**插件每次加载时会自动搬一次**（改键名，token 一字不动，幂等），也可以手动：
+
+```bash
+magpie tool wbkit_pool --action adopt
+```
+
+有 `client` 时走宿主的 `auth.set`，搬完 magpie 不用重启就能看到；没有时直接改文件，重启后生效。
 
 ## 三个工具
 
 装好后任何 agent 都能调（magpie 通过 `/mcp/magpie/tools` 暴露）：
 
 ```
-wbkit_pool    --action import|list|check  [--path <导出 JSON>] [--uid <前缀>] [--probe true|false]
+wbkit_pool    --action import|export|adopt|list|check  [--path <导出 JSON>] [--uid <前缀>] [--probe true|false]
 wbkit_growth  --action status|task|school|travel|streak|daily  [--code …] [--only …] [--lottery true]
 wbkit_usage   --period 1d|7d|30d  [--uid <前缀>] [--detail <0-1000>]
 ```
 
 - `wbkit_pool import` 不指 `path` 时先扫 `~/.config/magpie/workbuddy-pool/*.json`，再退回 `~/.wb-switch/accounts.json`；导入幂等，账号名优先用导出里的昵称。
 - `wbkit_pool export` 写 wb-switch 格式（含令牌），用于换机器与备份。
+- `wbkit_pool adopt` 把孤儿账号键（如 `codebuddy#…`）搬到已装社区插件声明的 id 上；插件加载时也会自动做一次。
 - `wbkit_usage` 只返回 `requestId / model / credit / client / requestTime`，**接口里的提示词原文一个字节都不留**。
 - `wbkit_growth` 只对国内个人账号（无 `enterpriseId`）生效。
 
@@ -152,7 +170,10 @@ magpie plugin options wbkit '{"autoCheckin":true,"checkinAt":"09:05","autoTravel
 
 ## 供应商 id 的两套写法
 
-magpie 0.1.1993 把内置供应商改叫 `codebuddy`，账号键随之从 `workbuddy#…` 变成 `codebuddy#…`；社区插件仍声明 `workbuddy` / `workbuddy-ai`。本插件两者都认：账号键的 provider id 或登录态里的域命中 `workbuddy|codebuddy` 即可，国际版按 `-ai` 或 `.ai` 域判断。导入时还会探测 store 里实际在用的那套 id 再落库。
+magpie 0.1.1993 曾把内置供应商改叫 `codebuddy`，账号键随之从 `workbuddy#…` 变成 `codebuddy#…`；社区插件 `@magpie-community/opencode-workbuddy-auth` 声明的仍是 `workbuddy` / `workbuddy-ai`。
+
+本插件的读法：provider id 或登录态里的域命中 `workbuddy|codebuddy` 都算 WorkBuddy 账号，国际版按 `-ai` 或 `.ai` 域判断（所以老数据不会从页面上消失）。
+写法：**一律写已装插件声明的 id**（`servedIds()` 读它的 `package.json` 确认），孤儿键由加载时的自动 adopt 搬过去。
 
 ## 数据来源
 
@@ -180,17 +201,19 @@ lib/usage.mjs        官方用量：分页扫描 + 按天/模型聚合
 lib/growth.mjs       成长计划（点任务树、开学季、连登、旅行原语）
 lib/api.mjs          billing 接口与请求头（余额 / 用量 / 签到共用）
 lib/{pools,importer,store,region,wb,snapshot}.mjs   账号池：归一化、导入、原子写、区域判定、探针、快照工具
+lib/keys.mjs         账号键规则：裸键=默认账号、#后缀=其余；给导入/搬家共用
+lib/adopt.mjs        把孤儿账号键搬到社区插件声明的 id（加载时自动跑，幂等）
 lib/view.mjs         页面快照（白名单字段，无令牌）
 lib/tools.mjs        三个工具的实现
 page/                index.html / app.js / style.css / icon.svg（data.js 生成，不入库）
 tools/{import,verify,snapshot}.mjs  命令行：导入、巡检、重生成快照
-test/                node --test，24 条
+test/                node --test，49 条
 ```
 
 ## 开发
 
 ```bash
-node --test test/            # 24 条：区域、导入幂等、余额口径、签到判定、用量聚合、快照不含令牌
+node --test test/*.test.mjs  # 49 条：账号键规则、孤儿键搬家、导入幂等、余额口径、签到判定、用量聚合、快照不含令牌
 node tools/snapshot.mjs      # 手动重生成 page/data.js
 ```
 

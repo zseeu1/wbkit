@@ -25,7 +25,7 @@ const record = (uid, nickname) => ({
   tokenType: 'Bearer',
 })
 
-test('同一 uid 只换 provider 前缀，摘要不变、不算新增也不算清理', async () => {
+test('同一 uid 只换 provider 前缀、不算新增也不算清理；只有一个账号时落到裸键（默认账号）', async () => {
   const authFile = makeStore(join(dir, 'a.json'), {
     'workbuddy#77326a9': { type: 'oauth', access: 'OLD', uid: 'u1', accountId: '账号A', method: MARK, pool: MARK },
   })
@@ -35,7 +35,8 @@ test('同一 uid 只换 provider 前缀，摘要不变、不算新增也不算�
   const report = await importRecords({ records: [record('u1', '账号A')], authFile, stateFile, probeLive: false })
   const store = JSON.parse(readFileSync(authFile, 'utf8'))
 
-  assert.deepEqual(Object.keys(store), ['codebuddy#77326a9'])
+  // 这个 provider 只有它一个账号：magpie 的第一个账号用裸键，社区插件才拿它当默认
+  assert.deepEqual(Object.keys(store), ['codebuddy'])
   assert.equal(report.added, 0)
   assert.deepEqual(report.renamed, ['workbuddy#77326a9'])
   assert.deepEqual(report.dropped, [])
