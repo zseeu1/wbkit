@@ -51,6 +51,18 @@ magpie plugin add ./wbkit
 
 一个 provider 可以登多个账号：第一个存在 `workbuddy`，之后的是 `workbuddy#<摘要>`。想批量导入就往下看 `wbkit_pool`。
 
+### 社区插件登录的账号在 wbkit 页面上
+
+同一份 `plugin-auth.json`、按 provider 前缀认，所以**三种登录都会出现在 wbkit 的账号页**；能读到多少取决于令牌在不在 store 里：
+
+| 登录方式 | 出现在页面 | 余额 / 积分包 | 签到 | 猫猫旅行 / 成长 |
+|---|---|---|---|---|
+| 浏览器 | ✅ | ✅ 现取官方接口 | ✅ | ✅ |
+| 桌面登录态 | ✅（显示账号名） | ❌ 令牌在 WorkBuddy 客户端里、每次由社区插件现取；余额看 magpie 供应商页 | ❌ 没有可用的 access | ❌ |
+| API Key | ✅（标签 `API key ·尾四位`） | ❌ WorkBuddy 客户端用 key 也不显示积分 | ❌ | ❌ |
+
+页面对读不到余额的那两类只写一句原因（`kind` 字段标明 `oauth` / `desktop` / `api`），不会去打接口也不会显示成「读取失败」。
+
 ## 每日签到
 
 页面底部有「每日签到」：开关 + 时间（默认 09:05，北京时间）+「立即签到」按钮。
@@ -207,13 +219,13 @@ lib/view.mjs         页面快照（白名单字段，无令牌）
 lib/tools.mjs        三个工具的实现
 page/                index.html / app.js / style.css / icon.svg（data.js 生成，不入库）
 tools/{import,verify,snapshot}.mjs  命令行：导入、巡检、重生成快照
-test/                node --test，49 条
+test/                node --test，50 条
 ```
 
 ## 开发
 
 ```bash
-node --test test/*.test.mjs  # 49 条：账号键规则、孤儿键搬家、导入幂等、余额口径、签到判定、用量聚合、快照不含令牌
+node --test test/*.test.mjs  # 50 条：登录方式识别、账号键规则、孤儿键搬家、导入幂等、余额口径、签到判定、用量聚合、快照不含令牌
 node tools/snapshot.mjs      # 手动重生成 page/data.js
 ```
 
