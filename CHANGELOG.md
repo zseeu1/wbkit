@@ -1,5 +1,10 @@
 # 更新记录
 
+## v0.2.2
+
+- 推 `v*` 标签由 GitHub Actions 自动建 Release，正文取本文件里同名那一段（`.github/workflows/release.yml`）
+- 版本号只做一次发版演练，功能与 v0.2.1 相同
+
 ## v0.2.1
 
 **修：magpie 0.1.1993 改名后页面 0 账号**

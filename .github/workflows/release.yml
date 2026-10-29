@@ -1,0 +1,44 @@
+# 推一个 v* 标签就自动建 GitHub Release（正文取 CHANGELOG 里同名的 ## vX.Y.Z 那段）。
+# 不用本地 token：GITHUB_TOKEN 由 Actions 提供，权限只给 contents: write。
+name: release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 要发布的标签（已存在）
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          echo "release: $TAG"
+          NOTES=$(awk -v tag="## $TAG" '
+            $0 == tag { on = 1; next }
+            /^## / { on = 0 }
+            on { print }
+          ' CHANGELOG.md)
+          if [ -z "${NOTES// }" ]; then
+            NOTES="见 CHANGELOG.md。"
+          fi
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "已有这个 release，跳过"
+            exit 0
+          fi
+          gh release create "$TAG" --title "$TAG" --notes "$NOTES" --verify-tag
