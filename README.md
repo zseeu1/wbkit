@@ -81,6 +81,24 @@ WorkBuddy 是 magpie **原生支持签到**的供应商之一，它自己会把�
 
 走动是**一次一步**：没猫就领养，`idle` 派出，`arrived` 领奖，`traveling` 跳过。触发点与签到相同，另有「推进一步」按钮即时触发。
 
+## 导入 / 导出账号
+
+页面上有一张「导入 / 导出账号」卡片：
+
+- **导入**：把 wb-switch 导出的整份 JSON 粘进文本框 → 「导入到 magpie」。支持数组、`{accounts:[…]}`、单对象三种形状，同 `uid` 多份只留活得最久的那份，账号名优先用昵称。
+- **导出**：点「导出 wb-switch 格式」，插件把 magpie 里的账号写成 `~/.config/magpie/wbkit-export-<时间>.json`（与 wb-switch 的导出同构，含 `auth_raw.auth`），页面显示文件名与条数。**文件里有令牌，等同密码**，别上传网盘。
+
+命令行同样有（适合换机器 / 脚本备份）：
+
+```bash
+magpie tool wbkit_pool --action import --path ~/Downloads/wb-switch-accounts.json
+magpie tool wbkit_pool --action export --path ~/Desktop/wb-switch-backup.json
+magpie tool wbkit_pool --action list
+magpie tool wbkit_pool --action check
+```
+
+导入会写到这台机器**实际在用的 provider id** 上（`workbuddy#…` 或 `codebuddy#…`），所以 magpie 升级改名之后也不会导进一个没人认的键里。
+
 ## 三个工具
 
 装好后任何 agent 都能调（magpie 通过 `/mcp/magpie/tools` 暴露）：
@@ -92,6 +110,7 @@ wbkit_usage   --period 1d|7d|30d  [--uid <前缀>] [--detail <0-1000>]
 ```
 
 - `wbkit_pool import` 不指 `path` 时先扫 `~/.config/magpie/workbuddy-pool/*.json`，再退回 `~/.wb-switch/accounts.json`；导入幂等，账号名优先用导出里的昵称。
+- `wbkit_pool export` 写 wb-switch 格式（含令牌），用于换机器与备份。
 - `wbkit_usage` 只返回 `requestId / model / credit / client / requestTime`，**接口里的提示词原文一个字节都不留**。
 - `wbkit_growth` 只对国内个人账号（无 `enterpriseId`）生效。
 
@@ -131,13 +150,17 @@ magpie plugin options wbkit '{"autoCheckin":true,"checkinAt":"09:05","autoTravel
 | `tab` | `all` | 页面分档：`all` / `cn` / `intl` |
 | `pendingCheckin` / `pendingTravel` | — | 页面按钮写入的即时请求，插件消费后不再触发 |
 
+## 供应商 id 的两套写法
+
+magpie 0.1.1993 把内置供应商改叫 `codebuddy`，账号键随之从 `workbuddy#…` 变成 `codebuddy#…`；社区插件仍声明 `workbuddy` / `workbuddy-ai`。本插件两者都认：账号键的 provider id 或登录态里的域命中 `workbuddy|codebuddy` 即可，国际版按 `-ai` 或 `.ai` 域判断。导入时还会探测 store 里实际在用的那套 id 再落库。
+
 ## 数据来源
 
 全部现取官方接口，**不读任何第三方缓存**：
 
 | 数据 | 端点 |
 |---|---|
-| 余额 / 额度窗口（账号卡） | 上游 `get-user-resource-summary`，带 401 自愈与企业额度 |
+| 余额 / 额度窗口（账号卡，若装了社区插件） | 社区插件自己的 `auth.usage` |
 | 逐包明细（页面） | `POST https://copilot.tencent.com/v2/billing/meter/get-user-resource`（body `{}`），按 `PackageName` 合并 |
 | 请求用量 | `POST https://www.workbuddy.cn/billing/meter/get-user-request-usage`（国际版 `www.workbuddy.ai` 同构） |
 | 每日签到 | `POST https://copilot.tencent.com/v2/billing/meter/daily-checkin` |

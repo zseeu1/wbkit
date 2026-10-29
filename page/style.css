@@ -339,3 +339,27 @@ code {
 
 .time input.num { width: 54px; text-align: right; }
 .ctl-accounts .ck-when { max-width: 22em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.transfer { align-items: flex-start; }
+.transfer .ctl-left { flex: 1; }
+#tf-text {
+  margin-top: 8px;
+  width: 100%;
+  min-height: 74px;
+  resize: vertical;
+  font: 12px/1.5 var(--mono);
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+#tf-text::placeholder { color: color-mix(in srgb, var(--fg) 38%, transparent); }
+.tf-actions { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+.btn.ghost {
+  border-color: var(--line);
+  background: transparent;
+  color: var(--muted);
+}
+.btn.ghost:hover { color: var(--fg); background: var(--surface-2); }
+.control[hidden] { display: none; }

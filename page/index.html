@@ -70,6 +70,19 @@
       </div>
     </section>
 
+    <section class="control transfer" id="transfer">
+      <div class="ctl-left">
+        <span class="ctl-title">导入 / 导出账号</span>
+        <span class="ctl-sub" id="tf-sub">把 wb-switch 的导出整份粘进来，或者把 magpie 里的账号导回去。</span>
+        <textarea id="tf-text" rows="4" spellcheck="false" placeholder='粘贴 wb-switch 导出的 JSON：[{"uid":"…","access_token":"…","refresh_token":"…","nickname":"…"}]'></textarea>
+        <div class="ctl-accounts" id="tf-status"></div>
+      </div>
+      <div class="ctl-right tf-actions">
+        <button type="button" class="btn" id="tf-import">导入到 magpie</button>
+        <button type="button" class="btn ghost" id="tf-export">导出 wb-switch 格式</button>
+      </div>
+    </section>
+
     <footer class="foot">
       <p class="foot-note">
         余额与积分包为官方实时数据，快照 <span id="fetched">—</span> 更新；签到由上方开关控制，

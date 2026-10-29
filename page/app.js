@@ -324,6 +324,60 @@ function paintTravel() {
   }
 }
 
+function paintTransfer() {
+  const tf = V?.transfer ?? {}
+  const sub = document.getElementById('tf-sub')
+  const status = document.getElementById('tf-status')
+  const importBtn = document.getElementById('tf-import')
+  const exportBtn = document.getElementById('tf-export')
+  const area = document.getElementById('tf-text')
+
+  status.replaceChildren()
+  const lastImport = tf.lastImport
+  const lastExport = tf.lastExport
+  if (lastImport?.at) {
+    const ok = lastImport.ok !== false
+    const line = el('span', 'ck-acc')
+    line.append(el('span', `pill ${ok ? 'ok' : 'warn'}`, ok ? `导入 ${lastImport.imported} 个` : '导入失败'))
+    line.append(el('span', 'ck-when', md(lastImport.at)))
+    if (!ok && lastImport.error) line.append(el('span', 'ck-when', String(lastImport.error).slice(0, 60)))
+    status.append(line)
+  }
+  if (lastExport?.at) {
+    const line = el('span', 'ck-acc')
+    line.append(el('span', `pill ${lastExport.ok === false ? 'warn' : 'ok'}`, lastExport.ok === false ? '导出失败' : `导出 ${lastExport.count} 个`))
+    line.append(el('span', 'ck-when mono', lastExport.file ? String(lastExport.file).replace(/^.*\//, '') : ''))
+    line.append(el('span', 'ck-when', md(lastExport.at)))
+    status.append(line)
+  }
+  if (!status.children.length) sub.textContent = '把 wb-switch 的导出整份粘进来，或者把 magpie 里的账号导回去。'
+
+  const submit = async (patch, label) => {
+    importBtn.disabled = true
+    exportBtn.disabled = true
+    sub.textContent = `${label}，宿主重载插件后执行…`
+    try {
+      const opts = (await magpie.options.get()) || {}
+      await magpie.options.set({ ...opts, ...patch })
+      setTimeout(() => location.reload(), 7000)
+    } catch {
+      importBtn.disabled = false
+      exportBtn.disabled = false
+      sub.textContent = '提交失败（页面没有写权限）'
+    }
+  }
+
+  importBtn.onclick = () => {
+    const text = area.value.trim()
+    if (!text) {
+      sub.textContent = '先把导出 JSON 粘到上面的框里'
+      return
+    }
+    submit({ pendingImport: { at: Date.now(), text } }, '已提交导入')
+  }
+  exportBtn.onclick = () => submit({ pendingExport: { at: Date.now() } }, '已提交导出')
+}
+
 function paintFooter() {
   document.getElementById('fetched').textContent = V?.generatedAt ? md(Date.parse(V.generatedAt)) : '—'
   document.getElementById('stamp').textContent = V?.generatedAt ? `快照 ${md(Date.parse(V.generatedAt))}` : '还没有快照'
@@ -342,8 +396,15 @@ async function boot() {
   paintDensity()
   paintOverview()
   paintAccounts()
-  paintControl()
-  paintTravel()
+  // 没有账号时，签到与旅行没有意义，只留导入入口
+  const hasAccounts = (V?.accounts?.length ?? 0) > 0
+  document.getElementById('control').hidden = !hasAccounts
+  document.getElementById('travel').hidden = !hasAccounts
+  if (hasAccounts) {
+    paintControl()
+    paintTravel()
+  }
+  paintTransfer()
   paintFooter()
 }
 

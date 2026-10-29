@@ -14,6 +14,7 @@ import { TOOLS } from './lib/tools.mjs'
 import { writeView } from './lib/view.mjs'
 import { maybeCheckin, consumePending } from './lib/schedule.mjs'
 import { maybeTravel, consumePendingTravel } from './lib/pet.mjs'
+import { consumePendingImport, consumePendingExport } from './lib/transfer.mjs'
 
 const log = (...a) => console.log('[wbkit]', ...a)
 
@@ -81,8 +82,23 @@ function tickLater(options, why) {
     })
 }
 
+// 页面上的「导入账号 / 导出账号」也是先把请求写进 options，这里消费一次
+async function transferTick(options) {
+  try {
+    const imported = await consumePendingImport(options)
+    if (imported.pending) log(`import: ${imported.ok ? `${imported.imported} 个账号` : imported.error}`)
+    const exported = consumePendingExport(options)
+    if (exported.pending) log(`export: ${exported.ok ? `${exported.count} 个账号 → ${exported.file}` : exported.error}`)
+    return { imported, exported }
+  } catch (e) {
+    log('transfer failed:', e?.message ?? e)
+    return { skipped: 'error' }
+  }
+}
+
 export const WorkBuddyKit = async (input, options) => {
   const opts = options ?? {}
+  await transferTick(opts)
   await checkinTick(opts, 'load')
   await travelTick(opts, 'load')
   await refreshPage(opts)
@@ -98,4 +114,4 @@ export const WorkBuddyKit = async (input, options) => {
 }
 
 // 给测试和 CLI 用；不是插件函数，magpie 不会调用它。
-export const _internal = { refreshPage, checkinTick, travelTick }
+export const _internal = { refreshPage, checkinTick, travelTick, transferTick }
