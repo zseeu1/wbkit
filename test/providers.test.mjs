@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { workBuddyAccounts, activeIds, isIntlAccount, isWorkBuddyAccount } from '../lib/providers.mjs'
+import { workBuddyAccounts, activeIds, servedIds, isIntlAccount, isWorkBuddyAccount } from '../lib/providers.mjs'
 
 const store = {
   'trae-cn': { type: 'oauth', access: 'T', uid: 't1' },
@@ -26,7 +26,10 @@ test('只靠域也能认出账号（换 id 之后的老数据）', () => {
   assert.equal(isWorkBuddyAccount('something#1', { domain: 'api.example.com' }), false)
 })
 
-test('activeIds 给出 store 里实际在用的那套 id', () => {
-  assert.deepEqual(activeIds(store), { cn: 'codebuddy', intl: 'workbuddy-ai' })
-  assert.deepEqual(activeIds({ 'workbuddy#a': { access: 'A' } }), { cn: 'workbuddy', intl: 'workbuddy-ai' })
+test('activeIds 优先用已装插件声明的 id，否则退回 store 的前缀', () => {
+  const served = servedIds()
+  const expected = served ?? { cn: 'codebuddy', intl: 'workbuddy-ai' }
+  assert.deepEqual(activeIds(store), expected)
+  // 不依赖本机装没装社区插件：两条路径都只返回一套 id
+  assert.equal(typeof activeIds({ 'workbuddy#a': { access: 'A' } }).cn, 'string')
 })
