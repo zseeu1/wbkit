@@ -1,33 +1,34 @@
 # wbkit
 
-**一个 magpie 插件，把 WorkBuddy 的事一次做完。** 供应商与登录、账号池导入、积分余额与到期、每日签到、猫猫旅行、官方用量——装一个，不再装三个。
+**补在社区插件后面的那一半。** 供应商、登录、请求与余额展示交给 [`@magpie-community/opencode-workbuddy-auth`](https://github.com/magpie-community/plugins/tree/main/packages/workbuddy)；本插件补上它没有的：账号池导入、每日签到、猫猫旅行、成长计划、官方用量，以及一个账号页。
 
 ```
-WorkBuddy (19 models)  signed in as …        ← 供应商由本插件提供
-插件 → WorkBuddy                              ← 账号页：余额、积分包、签到、旅行
-wbkit_pool / wbkit_growth / wbkit_usage       ← 给 agent 的三个工具
+@magpie-community/opencode-workbuddy-auth   →  WorkBuddy (19 models) / 登录 / 余额
+wbkit                                       →  账号页、签到、旅行、成长、用量、三个工具
 ```
 
-## 为什么是「一个」
+不复制上游代码，也不再 vendor：上游更新直接跟上，本插件只依赖 `plugin-auth.json` 里的登录态。
 
-原来要装三样东西才凑齐：`opencode-workbuddy-auth`（供应商 + 登录）、`magpie-workbuddy-pool`（账号池导入）、`magpie-workbuddy-growth`（签到与成长计划）。它们各写各的，登录态凑巧都在 `plugin-auth.json` 里才没有打架。
+## 分工
 
-wbkit 把它们收进一个包，按 magpie 自己的钩子分工：
-
-| 钩子 / 位置 | 负责什么 | 显示在哪 |
+| 谁 | 负责 | 显示在哪 |
 |---|---|---|
-| `provider` / `auth` | 两个 provider（国内 / 国际）、三种登录、续期、企业头 | 供应商页 |
-| `auth.usage` | 余额、额度窗口、cycle / 作废时间（沿用上游实现，含 401 自愈与企业额度） | 供应商账号卡、`magpie quota` |
-| `auth.checkin` | 每日签到 | 账号卡、签到记录 |
-| `tool` | 账号池导入、成长计划、用量明细 | 任何 agent（MCP） |
-| `page` | 账号总览、逐包明细、签到与旅行开关 | 侧栏「WorkBuddy」 |
+| 社区插件 `opencode-workbuddy-auth` | 两个 provider（国内 / 国际）、三种登录、请求签名、续期、企业头、`auth.usage`（余额 / 额度窗口 / cycle / 作废时间） | 供应商页、`magpie quota` |
+| magpie 自带 | WorkBuddy 原生签到（`~/.config/magpie/workbuddy-checkin.json`）、内置「预热与签到」调度 | 用量页的「自动签到 / 立即签到」 |
+| **wbkit** | 账号池导入、签到补位、猫猫旅行、成长计划、官方用量、账号页 | 侧栏「WorkBuddy」+ 三个工具 |
+
+本插件不注册 `provider` / `auth`，所以不会和社区插件抢供应商 id，也不会顶掉它的 `auth.usage`；唯一会碰的是「签到」——它先看 magpie 原生签到有没有签过，签过就不发请求。
 
 ## 安装
 
+先有登录，再补这一半：
+
 ```bash
-magpie plugin add github:zseeu1/wbkit
-magpie plugin use wbkit workbuddy        # 让本插件接管 provider id
-magpie quota                             # 能看到每个账号的余额与到期就对了
+magpie plugin add @magpie-community/opencode-workbuddy-auth    # 供应商 + 登录
+magpie plugin login workbuddy                                  # 浏览器 / 桌面登录态 / API Key
+
+magpie plugin add github:zseeu1/wbkit                          # 本插件
+magpie quota                                                   # 余额卡来自社区插件
 ```
 
 开发时用文件夹就地加载，改完关掉再打开插件即可：
@@ -36,7 +37,7 @@ magpie quota                             # 能看到每个账号的余额与到�
 magpie plugin add ./wbkit
 ```
 
-装好后在 设置 → 插件 里，本插件应当只有一行；`workbuddy` / `workbuddy-ai` 由它提供。
+装好后 设置 → 插件 里会有两行：社区插件那行带 `workbuddy (19 models)`，wbkit 那行带 `page` 与 `tools`。
 
 ## 登录
 
@@ -61,6 +62,10 @@ magpie plugin add ./wbkit
 | 「立即签到」 | 不等时间，立刻跑一轮 |
 
 一天一次：签到成功的账号当天跳过；结果写进 `~/.config/magpie/wbkit-checkin.json`，页面和账号卡都会显示。失败会在页面标红并给出原因（`要验证码 / 失败 / 无资格`），点「立即签到」重试。
+
+### 签到怎么补位
+
+本插件没有 `auth.checkin`（那需要在提供 provider 的插件里），而是自己调 `POST /v2/billing/meter/daily-checkin`，所以不依赖谁提供 provider。
 
 ### 与 magpie 自带签到的关系
 
@@ -143,8 +148,7 @@ magpie plugin options wbkit '{"autoCheckin":true,"checkinAt":"09:05","autoTravel
 ## 目录
 
 ```
-index.mjs            插件入口：只导出两个插件函数，其余挂 _internal
-vendor/workbuddy.mjs 上游社区插件 0.1.41 原样（MIT，见 NOTICE）
+index.mjs            插件入口：只导出一个插件函数（工具 + chat.headers 时机，其余挂 _internal）
 lib/quota.mjs        auth.usage：余额 / 积分包 / 到期
 lib/checkin.mjs      auth.checkin：每日签到
 lib/schedule.mjs     签到的调度与状态（一天一次、手动请求消费）
@@ -156,7 +160,6 @@ lib/{pools,importer,store,region,wb,snapshot}.mjs   账号池：归一化、导�
 lib/view.mjs         页面快照（白名单字段，无令牌）
 lib/tools.mjs        三个工具的实现
 page/                index.html / app.js / style.css / icon.svg（data.js 生成，不入库）
-scripts/sync-upstream.mjs   跟版上游并校验导出
 tools/{import,verify,snapshot}.mjs  命令行：导入、巡检、重生成快照
 test/                node --test，24 条
 ```
@@ -165,12 +168,8 @@ test/                node --test，24 条
 
 ```bash
 node --test test/            # 24 条：区域、导入幂等、余额口径、签到判定、用量聚合、快照不含令牌
-node scripts/sync-upstream.mjs        # 从本机已装的社区插件更新 vendor
-node scripts/sync-upstream.mjs --npm  # 或从 npm 拉最新版
 node tools/snapshot.mjs      # 手动重生成 page/data.js
 ```
-
-`sync-upstream.mjs` 会校验上游仍然导出 `WorkBuddyAuthPlugin` / `WorkBuddyAIAuthPlugin` / `_internal`，上游改结构时先报警而不是静默挂掉。
 
 ## 边界
 
@@ -180,4 +179,4 @@ node tools/snapshot.mjs      # 手动重生成 page/data.js
 
 ## 许可
 
-MIT。`vendor/workbuddy.mjs`、`lib/growth.mjs`、`lib/{pools,importer,store,region,snapshot,wb}.mjs` 来自 MIT 许可的社区项目，出处见 [NOTICE](NOTICE)。
+MIT。`lib/growth.mjs`、`lib/{pools,importer,store,region,snapshot,wb}.mjs` 来自 MIT 许可的社区项目，出处见 [NOTICE](NOTICE)。供应商与登录不在本包内，由社区插件提供。
