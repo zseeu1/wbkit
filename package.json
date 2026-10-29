@@ -1,6 +1,6 @@
 {
   "name": "wbkit",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "WorkBuddy 补位插件：账号池导入、每日签到、猫猫旅行、成长计划、官方用量与账号页。供应商与登录交给社区插件 opencode-workbuddy-auth。",
   "type": "module",
   "main": "./index.mjs",

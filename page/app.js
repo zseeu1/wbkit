@@ -338,7 +338,17 @@ function paintTransfer() {
   if (lastImport?.at) {
     const ok = lastImport.ok !== false
     const line = el('span', 'ck-acc')
-    line.append(el('span', `pill ${ok ? 'ok' : 'warn'}`, ok ? `导入 ${lastImport.imported} 个` : '导入失败'))
+    let text
+    if (!ok) text = '导入失败'
+    else if ((lastImport.added ?? 0) === 0 && !lastImport.renamed && !lastImport.dropped) text = `已是最新（${lastImport.imported} 个账号都在）`
+    else {
+      const bits = [`${lastImport.imported} 个`]
+      if (lastImport.added) bits.push(`新增 ${lastImport.added}`)
+      if (lastImport.renamed) bits.push(`改名 ${lastImport.renamed}`)
+      if (lastImport.dropped) bits.push(`清理 ${lastImport.dropped}`)
+      text = `导入 ${bits.join(' · ')}`
+    }
+    line.append(el('span', `pill ${ok ? 'ok' : 'warn'}`, text))
     line.append(el('span', 'ck-when', md(lastImport.at)))
     if (!ok && lastImport.error) line.append(el('span', 'ck-when', String(lastImport.error).slice(0, 60)))
     status.append(line)
