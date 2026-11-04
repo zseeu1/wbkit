@@ -93,10 +93,11 @@ function packageRow(p) {
   head.append(el('span', 'pkg-name', p.name))
   head.append(el('span', `pkg-when ${tone(p.runsOutAt)}`, md(p.runsOutAt)))
   const amount = el('div', 'pkg-amount')
-  amount.append(el('strong', null, num(p.balance)), el('span', null, ' 积分'))
+  amount.append(el('strong', null, num(p.balance ?? p.remain)), el('span', null, ' 积分'))
   const bar = el('div', 'pkg-bar')
   const fill = el('span', `pkg-fill ${tone(p.runsOutAt)}`)
-  const pct = p.size > 0 ? Math.max(2, Math.min(100, (p.balance / p.size) * 100)) : 2
+  const sizeN = Number(p.size) || 0, balN = Number(p.balance ?? p.remain) || 0
+  const pct = sizeN > 0 ? Math.max(2, Math.min(100, (balN / sizeN) * 100)) : 2
   fill.style.setProperty('--w', `${pct}%`)
   bar.append(fill)
   row.append(head, amount, bar)
