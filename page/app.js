@@ -164,9 +164,21 @@ function accountCard(a) {
 
   const acts = el('div', 'card-actions')
   acts.style.cssText = 'display:flex;gap:8px;margin-top:10px;flex-wrap:wrap'
+  const actionDone = (action, a) => {
+    if (action === 'checkin') return checkedToday(a)
+    if (action === 'travel') {
+      const tv = (V?.travel?.accounts || []).find((x) => a.label && x.accountId === a.label)
+      return !!(tv && tv.state === 'traveling')
+    }
+    if (action === 'growth') {
+      const allDone = (a.taskStats && a.taskStats.done === a.taskStats.total && a.taskStats.notAccepted === 0)
+      const la = a.lastAction
+      return !!(allDone || (la && la.action === 'growth' && la.ok))
+    }
+    return false
+  }
   for (const [action, label] of [['checkin', '签到'], ['travel', '旅行'], ['growth', '成长']]) {
-    const done = action === 'checkin' && checkedToday(a)
-    const btn = el('button', 'btn ghost', done ? '已签到' : label)
+    const done = actionDone(action, a)
     btn.type = 'button'
     btn.disabled = done
     btn.style.cssText = 'font-size:12px;padding:5px 12px;border-radius:8px'
@@ -236,9 +248,21 @@ function compactRow(a, initialOpen = false) {
   }
 
   const acts = el('div', 'c-acts')
+  const actionDone = (action, a) => {
+    if (action === 'checkin') return checkedToday(a)
+    if (action === 'travel') {
+      const tv = (V?.travel?.accounts || []).find((x) => a.label && x.accountId === a.label)
+      return !!(tv && tv.state === 'traveling')
+    }
+    if (action === 'growth') {
+      const allDone = (a.taskStats && a.taskStats.done === a.taskStats.total && a.taskStats.notAccepted === 0)
+      const la = a.lastAction
+      return !!(allDone || (la && la.action === 'growth' && la.ok))
+    }
+    return false
+  }
   for (const [action, label] of [['checkin', '签到'], ['travel', '旅行'], ['growth', '成长']]) {
-    const done = action === 'checkin' && checkedToday(a)
-    const btn = el('button', 'btn ghost', done ? '已签到' : label)
+    const done = actionDone(action, a)
     btn.type = 'button'
     btn.disabled = done
     btn.style.cssText = 'font-size:11px;padding:3px 9px;border-radius:7px;white-space:nowrap'
@@ -392,43 +416,14 @@ function paintControl() {
   const time = document.getElementById('ck-time')
   const sub = document.getElementById('ck-sub')
   const rows = document.getElementById('ck-accounts')
+  const now = document.getElementById('ck-now')
 
   toggle.checked = ck.enabled === true
   if (ck.at) time.value = ck.at
+  const isOn = ck.enabled === true
 
-  const today = ck.accounts?.filter((a) => a.date === ck.today) ?? []
-  const bad = (ck.accounts ?? []).filter((a) => a.outcome === 'failed' || a.outcome === 'captcha').slice(-1)[0]
-  sub.textContent = bad
-    ? `上次失败：${bad.accountId} ${outcomeText(bad.outcome)} ${md(bad.at)} —— 点右边「立即签到」重试`
-    : !ck.enabled
-    ? '关（打开后按设置的时间，每天替每个账号签一次）'
-    : today.length
-      ? `今天：${today.map((a) => `${a.accountId} ${outcomeText(a.outcome)}`).join(' · ')}`
-      : `已开，${ck.at} 之后自动签`
+  sub.textContent = isOn ? `已开，${ck.at} 之后自动签` : '关'
   rows.replaceChildren()
-  for (const a of (ck.accounts ?? []).slice(-4).reverse()) {
-    const line = el('span', 'ck-acc')
-    line.append(el('span', 'ck-name', a.accountId || a.uid))
-    line.append(el('span', `pill ${a.outcome === 'claimed' || a.outcome === 'done' ? 'ok' : 'warn'}`, outcomeText(a.outcome)))
-    if (a.at) line.append(el('span', 'ck-when', md(a.at)))
-    rows.append(line)
-  }
-
-  const now = document.getElementById('ck-now')
-  now.onclick = async () => {
-    now.disabled = true
-    now.textContent = '已提交…'
-    sub.textContent = '已提交，宿主重载插件后开始签到…'
-    try {
-      const opts = (await magpie.options.get()) || {}
-      await magpie.options.set({ ...opts, pendingCheckin: { at: Date.now() } })
-      setTimeout(() => location.reload(), 6000)
-    } catch {
-      now.disabled = false
-      now.textContent = '立即签到'
-      sub.textContent = '提交失败（页面没有写权限）'
-    }
-  }
 
   const save = async (patch) => {
     try {
@@ -441,6 +436,16 @@ function paintControl() {
   }
   toggle.onchange = () => save({ autoCheckin: toggle.checked })
   time.onchange = () => save({ checkinAt: time.value || '09:05' })
+  now.onclick = async () => {
+    now.disabled = true; now.textContent = '已提交…'; sub.textContent = '已提交，宿主重载后开始签到'
+    try {
+      const opts = (await magpie.options.get()) || {}
+      await magpie.options.set({ ...opts, pendingCheckin: { at: Date.now() } })
+      setTimeout(() => location.reload(), 6000)
+    } catch {
+      now.disabled = false; now.textContent = '立即签到'; sub.textContent = '提交失败（页面没有写权限）'
+    }
+  }
 }
 
 function paintTravel() {
@@ -449,66 +454,34 @@ function paintTravel() {
   const every = document.getElementById('tv-every')
   const sub = document.getElementById('tv-sub')
   const rows = document.getElementById('tv-accounts')
+  const now = document.getElementById('tv-now')
 
   toggle.checked = tv.enabled === true
   every.value = String(tv.everyMin || 30)
-
-  const TONE = { idle: '', traveling: 'ok', arrived: 'warn' }
-  const lastOf = (a) => a.last?.message || ''
-  sub.textContent = !tv.enabled
-    ? '关（打开后按间隔自动推进一步：派出 → 到达 → 领奖）'
-    : tv.lastRunAt
-      ? `上次 ${md(tv.lastRunAt)} · 每 ${tv.everyMin} 分钟推进一步`
-      : `已开，每 ${tv.everyMin} 分钟推进一步`
-
+  sub.textContent = tv.enabled ? `已开，每 ${tv.everyMin} 分钟推进一步` : '关'
   rows.replaceChildren()
-  for (const a of tv.accounts ?? []) {
-    const line = el('span', 'ck-acc')
-    line.append(el('span', 'ck-name', a.accountId))
-    if (a.error) line.append(el('span', 'pill warn', '读取失败'))
-    else {
-      line.append(el('span', `pill ${TONE[a.state] || ''}`, a.label || (a.hasPet ? '未知' : '还没有猫')))
-      if (a.dailyLimitReached) line.append(el('span', 'ck-when', '今日已到上限'))
-      const msg = lastOf(a)
-      if (msg) line.append(el('span', 'ck-when', msg))
-    }
-    rows.append(line)
-  }
-  if (!rows.children.length) rows.append(el('span', 'ck-when', '没有可旅行的账号'))
 
-  const now = document.getElementById('tv-now')
+  const save = async (patch) => {
+    try {
+      const opts = (await magpie.options.get()) || {}
+      await magpie.options.set({ ...opts, ...patch })
+      sub.textContent = '已保存，下一次加载生效'
+    } catch { sub.textContent = '保存失败（页面无写权限）' }
+  }
+  toggle.onchange = () => save({ autoTravel: toggle.checked })
+  every.onchange = () => {
+    const v = Math.max(5, Math.min(720, Number(every.value) || 30))
+    every.value = String(v)
+    save({ travelEveryMin: v })
+  }
   now.onclick = async () => {
-    now.disabled = true
-    now.textContent = '已提交…'
-    sub.textContent = '已提交，宿主重载插件后推进一步…'
+    now.disabled = true; now.textContent = '已提交…'; sub.textContent = '已提交，宿主重载后推进一步'
     try {
       const opts = (await magpie.options.get()) || {}
       await magpie.options.set({ ...opts, pendingTravel: { at: Date.now() } })
       setTimeout(() => location.reload(), 6000)
     } catch {
-      now.disabled = false
-      now.textContent = '推进一步'
-      sub.textContent = '提交失败（页面没有写权限）'
-    }
-  }
-  toggle.onchange = async () => {
-    try {
-      const opts = (await magpie.options.get()) || {}
-      await magpie.options.set({ ...opts, autoTravel: toggle.checked })
-      sub.textContent = '已保存，下一次加载生效'
-    } catch {
-      sub.textContent = '保存失败（页面无写权限）'
-    }
-  }
-  every.onchange = async () => {
-    const v = Math.max(5, Math.min(720, Number(every.value) || 30))
-    every.value = String(v)
-    try {
-      const opts = (await magpie.options.get()) || {}
-      await magpie.options.set({ ...opts, travelEveryMin: v })
-      sub.textContent = '已保存，下一次加载生效'
-    } catch {
-      sub.textContent = '保存失败（页面无写权限）'
+      now.disabled = false; now.textContent = '推进一步'; sub.textContent = '提交失败（页面没有写权限）'
     }
   }
 }
