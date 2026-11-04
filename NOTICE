@@ -12,3 +12,15 @@ lib/pools.mjs, lib/importer.mjs, lib/store.mjs, lib/region.mjs, lib/snapshot.mjs
 
 供应商、登录与余额显示不在本包内：那由社区插件
 @magpie-community/opencode-workbuddy-auth 提供（独立安装，MIT）。
+
+service/, lib/engine/
+  magpie-workbuddy-tasks 0.2.0
+  https://github.com/jichie/magpie-workbuddy-tasks
+  Copyright (c) jichie — MIT
+  （引擎与看板服务移植自该项目的 engine/* 与 daemon.mjs；其逻辑承自 workbuddy2api-hub / wb-proxy，随上游 MIT）
+
+lib/models.mjs, lib/wbclient.mjs
+  magpie-workbuddy-plus 0.4.2
+  https://github.com/sabercomo/magpie-workbuddy-plus
+  Copyright (c) sabercomo — MIT
+  （模型目录/套餐视图移植自该项目的 models.mjs 与 client.mjs）

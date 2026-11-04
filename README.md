@@ -1,13 +1,16 @@
 # wbkit
 
-**补在社区插件后面的那一半。** 供应商、登录、请求与余额展示交给 [`@magpie-community/opencode-workbuddy-auth`](https://github.com/magpie-community/plugins/tree/main/packages/workbuddy)；本插件补上它没有的：账号池导入、每日签到、猫猫旅行、成长计划、官方用量，以及一个账号页。
+**补在社区插件后面的那一半。** 供应商、登录、请求与余额展示交给 [`@magpie-community/opencode-workbuddy-auth`](https://github.com/magpie-community/plugins/tree/main/packages/workbuddy)；本插件补上它没有的：账号池导入、每日签到、猫猫旅行、批量成长任务、模型目录、官方用量，以及账号页 + 本地看板。
 
 ```
 @magpie-community/opencode-workbuddy-auth   →  WorkBuddy (19 models) / 登录 / 余额
-wbkit                                       →  账号页、签到、旅行、成长、用量、三个工具
+wbkit                                       →  账号页、签到、旅行、批量任务、模型、用量、五个工具
 ```
 
-不复制上游代码，也不再 vendor：上游更新直接跟上，本插件只依赖 `plugin-auth.json` 里的登录态。
+**0.4.0 把两个 WorkBuddy 插件并了进来**（仍是一个插件，不用再各装一遍）：
+
+- `jichie/magpie-workbuddy-tasks` → 批量任务引擎与本地服务：接取→点亮→轮询进度→达标才领奖、任务级勾选、夜猫子、每日活跃、积分明细、风控冷却
+- `sabercomo/magpie-workbuddy-plus` → 模型目录/套餐视图：国内/国际模型、积分倍率、上下文、档位/促销
 
 ## 分工
 
@@ -15,9 +18,19 @@ wbkit                                       →  账号页、签到、旅行、�
 |---|---|---|
 | 社区插件 `opencode-workbuddy-auth` | 两个 provider（国内 / 国际）、三种登录、请求签名、续期、企业头、`auth.usage`（余额 / 额度窗口 / cycle / 作废时间） | 供应商页、`magpie quota` |
 | magpie 自带 | WorkBuddy 原生签到（`~/.config/magpie/workbuddy-checkin.json`）、内置「预热与签到」调度 | 用量页的「自动签到 / 立即签到」 |
-| **wbkit** | 账号池导入、签到补位、猫猫旅行、成长计划、官方用量、账号页 | 侧栏「WorkBuddy」+ 三个工具 |
+| **wbkit** | 账号池、签到补位、猫猫旅行、批量成长任务、模型目录、官方用量、账号页 + 看板 | 侧栏「WorkBuddy」+ 五个工具 |
 
 本插件不注册 `provider` / `auth`，所以不会和社区插件抢供应商 id，也不会顶掉它的 `auth.usage`；唯一会碰的是「签到」——它先看 magpie 原生签到有没有签过，签过就不发请求。
+
+## 任务 / 模型与本地服务（0.4.0）
+
+批量任务和模型视图跑在一个**本地服务**里（`service/`，默认只绑 `127.0.0.1`）：
+
+- 工具：`wbkit_tasks`（status / run / wait / list / claim）跑批量任务；`wbkit_models` 读模型目录与套餐
+- 页面：账号页顶部有「任务 / 模型看板」入口。声明了 `magpie.page.service: {port:4390}`，magpie 会把 `_magpie/service/` 反代给本服务，看板在 magpie 窗口内打开；不支持时退回入口卡 + `http://127.0.0.1:4390/`
+- **默认懒启动**：插件加载不起进程；用工具或点「打开看板」才拉起，空闲 30 分钟自动退出。选项 `service`：`lazy`（默认）/ `on`（常驻）/ `off`（停用）；`servicePort` 可改端口
+- 调度唯一归属：服务在跑时，旅行/夜猫走引擎的北京时间窗口（09:00/21:00、01:00），wbkit 的间隔旅行自动让路，不会同账号重复旅行
+- 安全：只接受回环 Host（防 DNS rebinding，经反代时设 `WBKIT_ALLOWED_HOSTS=host:port`）、POST 必须 `application/json`（挡跨站表单）、令牌永不进页面快照。**别把 4390 发布到公网或开放局域网**；含 token 的账号导出只在显式点「导出」时生成
 
 ## 安装
 
@@ -128,13 +141,15 @@ magpie tool wbkit_pool --action adopt
 
 有 `client` 时走宿主的 `auth.set`，搬完 magpie 不用重启就能看到；没有时直接改文件，重启后生效。
 
-## 三个工具
+## 五个工具
 
 装好后任何 agent 都能调（magpie 通过 `/mcp/magpie/tools` 暴露）：
 
 ```
 wbkit_pool    --action import|export|adopt|list|check  [--path <导出 JSON>] [--uid <前缀>] [--probe true|false]
 wbkit_growth  --action status|task|school|travel|streak|daily  [--code …] [--only …] [--lottery true]
+wbkit_tasks   --action status|run|wait|list|claim  [--uids …] [--legs growth,travel,night] [--codes …] [--jobId …]
+wbkit_models  （无参数，返回国内/国际模型与套餐；只读）
 wbkit_usage   --period 1d|7d|30d  [--uid <前缀>] [--detail <0-1000>]
 ```
 
@@ -142,7 +157,8 @@ wbkit_usage   --period 1d|7d|30d  [--uid <前缀>] [--detail <0-1000>]
 - `wbkit_pool export` 写 wb-switch 格式（含令牌），用于换机器与备份。
 - `wbkit_pool adopt` 把孤儿账号键（如 `codebuddy#…`）搬到已装社区插件声明的 id 上；插件加载时也会自动做一次。
 - `wbkit_usage` 只返回 `requestId / model / credit / client / requestTime`，**接口里的提示词原文一个字节都不留**。
-- `wbkit_growth` 只对国内个人账号（无 `enterpriseId`）生效。
+- `wbkit_growth` 的 `task` 动作现在走引擎的完整流水线（接取→点亮→轮询→领奖）；`streak/school/travel/daily` 仍是原有实现。只对国内个人账号（无 `enterpriseId`）生效。
+- `wbkit_tasks` 走本地服务执行长活：`run` 立即返回 job id，用 `status`/`wait` 看进度；单次调用 ≤55s，跨账号批量在服务里跑。首次调用会自动拉起服务（`service=lazy`）。
 
 终端里同样能调：
 
@@ -216,7 +232,7 @@ lib/{pools,importer,store,region,wb,snapshot}.mjs   账号池：归一化、导�
 lib/keys.mjs         账号键规则：裸键=默认账号、#后缀=其余；给导入/搬家共用
 lib/adopt.mjs        把孤儿账号键搬到社区插件声明的 id（加载时自动跑，幂等）
 lib/view.mjs         页面快照（白名单字段，无令牌）
-lib/tools.mjs        三个工具的实现
+lib/tools.mjs        五个工具的实现
 page/                index.html / app.js / style.css / icon.svg（data.js 生成，不入库）
 tools/{import,verify,snapshot}.mjs  命令行：导入、巡检、重生成快照
 test/                node --test，50 条

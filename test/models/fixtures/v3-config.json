@@ -1,0 +1,30 @@
+{
+  "agents": [
+    {
+      "name": "cli",
+      "models": ["auto", "hy3", "hy3-x", "glm-5.2", "gpt-x", "glm-5.3", "ds"]
+    },
+    { "name": "other", "models": ["video"] }
+  ],
+  "models": [
+    { "id": "auto", "name": "Auto", "credits": "", "maxInputTokens": 256000, "isDefault": true, "descriptionZh": "自动选择" },
+    { "id": "hy3", "name": "Hy3", "credits": "x0.00", "maxInputTokens": 192000 },
+    { "id": "hy3-x", "name": "Hy3", "credits": "x0.05", "maxInputTokens": 192000 },
+    { "id": "glm-5.2", "name": "GLM-5.2", "credits": "x0.79 credits", "maxInputTokens": 128000 },
+    { "id": "gpt-x", "name": "GPT-X", "credits": "x1.33", "maxInputTokens": 400000 },
+    { "id": "glm-5.3", "name": "GLM-5.3", "credits": "x0.69" },
+    { "id": "ds", "name": "DeepSeek", "credits": "x0.11", "maxInputTokens": 128000 },
+    { "id": "video", "name": "Video", "credits": "x9" }
+  ],
+  "modelTiers": [
+    { "enabled": true, "badge": { "label": "Pro Only" }, "hover": { "textZh": "模型仅面向 Pro 用户开放。" }, "modelIds": ["gpt-x"] },
+    { "enabled": true, "badge": { "label": "订阅优先" }, "hover": { "textZh": "资源紧张，会员优先调度。" }, "modelIds": ["glm-5.3"] }
+  ],
+  "modelPromotions": [
+    { "kind": "discount", "enabled": true, "badge": { "label": "限时免费" }, "discount": { "discountedCredits": "0x" }, "modelIds": ["hy3"], "schedule": { "validUntil": "2026-11-16T00:00:00+08:00" } },
+    { "kind": "discount", "enabled": true, "badge": { "label": "过期" }, "discount": { "factor": 0 }, "modelIds": ["hy3-x"], "schedule": { "validUntil": "2026-11-01T00:00:00+08:00" } },
+    { "kind": "discount", "enabled": true, "badge": { "label": "夜间折扣" }, "modelIds": ["glm-5.2"], "schedule": { "daily": [{ "start": "7:50", "end": "23:00" }] } },
+    { "kind": "discount", "enabled": true, "badge": { "label": "夜间折扣" }, "discount": { "discountedCredits": "0.50x" }, "modelIds": ["glm-5.2"], "schedule": { "daily": [{ "start": "23:00", "end": "7:50" }] } },
+    { "kind": "discount", "enabled": true, "badge": { "label": "夜间折扣" }, "hover": { "textZh": "周一至周五 09:00–12:00、14:00–18:00 属高峰原价，非高峰期积分5折" }, "modelIds": ["ds"], "schedule": { "daily": [{ "start": "0:00", "end": "23:59" }] } }
+  ]
+}
