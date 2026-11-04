@@ -216,62 +216,43 @@ function paintDensity() {
 
 // 紧凑模式：一行一个账号，账号多了也不占屏
 function compactRow(a, initialOpen = false) {
+  { // scope guard
   const row = el('div', 'crow')
   const who = el('div', 'c-who')
   who.append(el('span', 'avatar sm', String(a.label || '?').slice(0, 1)))
   const names = el('div', 'c-names')
   names.append(el('strong', null, a.label))
-  names.append(el('span', 'sub', [a.regionLabel, a.domain].filter(Boolean).join(' · ')))
+  const sub = el('span', 'sub', [a.regionLabel, days(a.expiresAt) != null ? `登录态 ${days(a.expiresAt)} 天` : a.domain].filter(Boolean).join(' · '))
+  names.append(sub)
   who.append(names)
 
+  // 积分条 + 剩余/总数
   const bal = el('div', 'c-bal')
-  bal.append(el('strong', null, a.error ? '—' : num(a.balance)))
-  bal.append(el('span', 'sub', `${a.packagesTotal ?? 0} 包`))
+  const balNum = el('strong', null, a.error ? '—' : num(a.balance))
+  balNum.style.cssText = 'font-size:15px'
+  const sizeNum = Number(a.size) || 0
+  const balSub = el('span', 'c-bal-sub', sizeNum > 0 ? `/ ${num(sizeNum)}` : `· ${a.packagesTotal ?? 0} 包`)
+  const balMeter = el('div', 'c-bal-meter')
+  const balFill = el('span')
+  const pct = sizeNum > 0 ? Math.max(2, Math.min(100, (Number(a.balance) / sizeNum) * 100)) : (Number(a.balance) > 0 ? 100 : 2)
+  balFill.style.width = `${pct}%`
+  balMeter.append(balFill)
+  bal.append(el('div', 'c-bal-top', [balNum, balSub]), balMeter)
 
-  const soon = (a.packages ?? []).map((p) => p.runsOutAt).filter(Boolean).sort()[0] || 0
-  const expiry = el('div', 'c-exp')
-  expiry.append(el('span', `c-when ${tone(soon)}`, soon ? md(soon) : '—'))
-  const d = days(a.expiresAt)
-  expiry.append(el('span', 'sub', d == null ? '登录态 —' : `登录态 ${d} 天`))
+  // 状态图标：4 个小圆点
+  const dots = el('div', 'c-dots')
+  const addDot = (cls, title) => { const d=el('span',`c-dot ${cls}`);d.title=title;dots.append(d) }
+  addDot(a.error || a.health==='error' ? 'warn' : a.health==='ok' ? 'ok' : 'warn', a.error ? '登录异常' : a.health==='ok' ? '可用' : a.healthNote || '待实测')
+  addDot(checkedToday(a) ? 'ok' : '', checkedToday(a) ? '已签到' : '未签到')
+  const tv = (V?.travel?.accounts||[]).find(x=>a.label&&x.accountId===a.label)
+  addDot(tv&&tv.state==='traveling' ? 'ok' : '', tv&&tv.state==='traveling'?'旅行中':'未旅行')
+  const allDone = !!(a.taskStats && a.taskStats.done === a.taskStats.total && a.taskStats.notAccepted === 0)
+  addDot(allDone ? 'ok' : '', allDone ? '成长完成' : '成长未完成')
 
-  const flags = el('div', 'c-flags')
-  flags.append(el('span', `pill ${a.error || a.health === 'error' ? 'warn' : a.health === 'ok' ? 'ok' : 'warn'}`, a.error ? '登录异常' : a.health === 'ok' ? '可用' : a.healthNote || '待实测'))
+  const chev = el('span', 'c-chevron', '›')
 
-
-  const acts = el('div', 'c-acts')
-  const actionDone = (action, a) => {
-    if (action === 'checkin') return checkedToday(a)
-    if (action === 'travel') {
-      const tv = (V?.travel?.accounts || []).find((x) => a.label && x.accountId === a.label)
-      return !!(tv && tv.state === 'traveling')
-    }
-    if (action === 'growth') {
-      const ts2 = a.taskStats
-      const allDone = !!(ts2 && ts2.done === ts2.total && ts2.notAccepted === 0)
-      const la = a.lastAction
-      return allDone || (la && la.action === 'growth' && la.ok)
-    }
-    return false
-  }
-  for (const [action, label] of [['checkin', '签到'], ['travel', '旅行'], ['growth', '成长']]) {
-    const done = actionDone(action, a)
-    const btn = el('button', 'btn ghost', done ? (action === 'checkin' ? '已签到' : action === 'travel' ? '旅行中' : '已完成') : label)
-    btn.type = 'button'
-    btn.disabled = done
-    btn.style.cssText = 'font-size:11px;padding:3px 9px;border-radius:7px;white-space:nowrap'
-    if (!done) btn.onclick = () => {
-      btn.disabled = true
-      btn.textContent = '已提交'
-      triggerAction(a, action)
-    }
-    acts.append(btn)
-  }
-
-  const chev = el('button', 'c-chevron', '›')
-  chev.type = 'button'
-  chev.setAttribute('aria-label', '展开详情')
-  acts.append(chev)
-
+  } // end scope guard
+  row.append(who, bal, dots, chev)
   const detail = el('div', 'c-detail')
   const inner = el('div', 'c-detail-in')
   const grid = el('div', 'c-detail-grid')
@@ -302,11 +283,11 @@ function compactRow(a, initialOpen = false) {
   const list = [...groups.values()].sort((x, y) => (x.runsOutAt || Infinity) - (y.runsOutAt || Infinity))
   const overview = sec('积分概览')
   overview.append(kv(el('span', null, `${num(a.balance)} / ${num(a.size)} 可用`)))
-  const meter = el('div', 'c-meter')
-  const fill = el('span')
-  const pct = Number(a.size) > 0 ? Math.max(2, Math.min(100, (Number(a.balance) / Number(a.size)) * 100)) : 2
-  fill.style.width = `${pct}%`
-  meter.append(fill)
+  const dmeter = el('div', 'c-meter')
+  const dfill = el('span')
+  const detPct = Number(a.size) > 0 ? Math.max(2, Math.min(100, (Number(a.balance) / Number(a.size)) * 100)) : 2
+  dfill.style.width = `${detPct}%`
+  dmeter.append(dfill)
   overview.append(meter)
   left.append(overview)
 
@@ -341,7 +322,7 @@ function compactRow(a, initialOpen = false) {
   }
   right.append(gr)
 
-  const tv = (V?.travel?.accounts || []).find((x) => a.label && x.accountId === a.label)
+  const ztv = (V?.travel?.accounts || []).find((x) => a.label && x.accountId === a.label)
   const tr = sec('猫猫旅行')
   tr.append(kv(el('span', null, tv?.label || '—'), el('span', 'c-muted', tv?.last?.message || '')))
   right.append(tr)

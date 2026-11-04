@@ -556,3 +556,14 @@ body {
 }
 .c-meter { height: 6px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin-top: 6px; }
 .c-meter span { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 70%, transparent), var(--green)); }
+/* 紧凑行 v4：条上图标化 + 积分条 */
+.c-bal-top { display: flex; align-items: baseline; gap: 6px; }
+.c-bal-sub { font-size: 11px; color: var(--muted); }
+.c-bal-meter { height: 5px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin-top: 4px; width: 100%; }
+.c-bal-meter span { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--green)); }
+.c-dots { display: flex; gap: 6px; align-items: center; justify-content: flex-end; }
+.c-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
+.c-dot.ok { background: var(--green); }
+.c-dot.warn { background: var(--orange); }
+.c-chevron { color: var(--muted); font-size: 18px; line-height: 1; cursor: pointer; transition: transform 0.26s cubic-bezier(0.2, 0.8, 0.2, 1); user-select: none; }
+.crow[aria-expanded="true"] .c-chevron { transform: rotate(90deg); }
