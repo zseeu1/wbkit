@@ -15,6 +15,7 @@ test('WorkBuddyKit 合并后工具面 = pool/growth/usage/tasks/models，快照�
   }))
   const oldHome = process.env.HOME
   process.env.HOME = home
+  process.env.WBKIT_LOAD_SYNC = '1'
   try {
     const { WorkBuddyKit } = await import('../../index.mjs')
     const plugin = await WorkBuddyKit({ client: null }, { service: 'off' })
@@ -30,6 +31,7 @@ test('WorkBuddyKit 合并后工具面 = pool/growth/usage/tasks/models，快照�
     assert.equal(existsSync(join(cfg, 'wbkit-tasks', 'state', 'daemon.json')), false)
   } finally {
     process.env.HOME = oldHome
+    delete process.env.WBKIT_LOAD_SYNC
     rmSync(home, { recursive: true, force: true })
   }
 })

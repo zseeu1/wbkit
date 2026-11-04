@@ -196,12 +196,22 @@ async function transferTick(options) {
 
 export const WorkBuddyKit = async (input, options) => {
   const opts = options ?? {}
+  // adopt / transfer 很快（只读本地文件），先做完保证账号键正确；
+  // 其余是慢活（签到/旅行/逐账号查余额快照/起服务），丢后台跑，
+  // 否则账号一多就会超过 magpie 给插件的 20 秒加载上限被判 failed（issue #6）。
   await adoptTick(input)
   await transferTick(opts)
-  await checkinTick(opts, 'load')
-  await travelTick(opts, 'load')
-  await refreshPage(opts)
-  await serviceTick(opts)
+  const backgroundInit = async () => {
+    await checkinTick(opts, 'load')
+    await travelTick(opts, 'load')
+    await refreshPage(opts)
+    await serviceTick(opts)
+  }
+  if (process.env.WBKIT_LOAD_SYNC === '1') {
+    await backgroundInit()
+  } else {
+    Promise.resolve().then(backgroundInit).catch((e) => log('background init failed:', e?.message ?? e))
+  }
 
   return {
     tool: {

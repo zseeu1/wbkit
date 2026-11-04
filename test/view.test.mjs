@@ -45,3 +45,16 @@ test('登录方式：浏览器 / 桌面 / API key 分得开', () => {
   assert.equal(kindOf({ type: 'api', key: 'k' }), 'api')
   assert.equal(kindOf({ type: 'oauth' }), 'none')
 })
+
+// 回归（issue #2 / PR #3）：DATA_FILE 曾经是 new URL(...).pathname，Windows 上得到
+// "/C:/a%20b/page/data.js"，mkdir 会拼成 "C:\\C:\\..." 而 ENOENT，页面永远空白。
+test('DATA_FILE 是本机可用的绝对路径（Windows 上不能是 /C:/ 形式）', async () => {
+  const { DATA_FILE } = await import('../lib/view.mjs')
+  const path = await import('node:path')
+  const fs = await import('node:fs')
+  assert.equal(path.isAbsolute(DATA_FILE), true)
+  assert.equal(path.basename(DATA_FILE), 'data.js')
+  assert.equal(DATA_FILE.includes('%20'), false, '路径里不应该有 URL 转义')
+  assert.equal(/^[/\\][A-Za-z]:/.test(DATA_FILE), false, 'Windows 上不应该出现 /C:/ 这种写法')
+  fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true })
+})
