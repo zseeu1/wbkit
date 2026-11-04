@@ -430,14 +430,8 @@ body {
 }
 .title-row { display: flex; align-items: center; gap: 12px; }
 .brand-mark {
-  width: 30px; height: 30px; border-radius: 10px; flex: none; position: relative;
-  background: linear-gradient(135deg, var(--accent), var(--green));
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
-}
-.brand-mark::after {
-  content: ""; position: absolute; inset: 8px;
-  border: 2px solid rgba(4, 33, 26, 0.55);
-  border-radius: 50% 50% 50% 0; transform: rotate(-18deg);
+  width: 30px; height: 30px; border-radius: 9px; flex: none; display: block;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
 }
 .top { align-items: center; gap: 20px; padding-bottom: 18px; border-bottom: 1px solid var(--line); margin-bottom: 22px; }
 .top h1 { font-size: 26px; letter-spacing: -0.3px; }
