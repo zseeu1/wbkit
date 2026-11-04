@@ -200,7 +200,20 @@ function compactRow(a) {
   flags.append(el('span', `pill ${a.error || a.health === 'error' ? 'warn' : a.health === 'ok' ? 'ok' : 'warn'}`, a.error ? '登录异常' : a.health === 'ok' ? '可用' : a.healthNote || '待实测'))
   if (a.checkin?.at) flags.append(el('span', `pill ${a.checkin.outcome === 'claimed' || a.checkin.outcome === 'done' ? 'ok' : 'warn'}`, outcomeText(a.checkin.outcome)))
 
-  row.append(who, bal, expiry, flags)
+  const acts = el('div', 'c-acts')
+  for (const [action, label] of [['checkin', '签到'], ['travel', '旅行'], ['growth', '成长']]) {
+    const btn = el('button', 'btn ghost', label)
+    btn.type = 'button'
+    btn.style.cssText = 'font-size:11px;padding:3px 9px;border-radius:7px;white-space:nowrap'
+    btn.onclick = () => {
+      btn.disabled = true
+      btn.textContent = '已提交'
+      triggerAction(a, action)
+    }
+    acts.append(btn)
+  }
+
+  row.append(who, bal, expiry, flags, acts)
   return row
 }
 

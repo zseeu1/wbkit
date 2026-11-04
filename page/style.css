@@ -310,7 +310,7 @@ code {
 .rows { display: grid; gap: 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
 .crow {
   display: grid;
-  grid-template-columns: minmax(180px, 1.5fr) 110px 130px minmax(140px, auto);
+  grid-template-columns: minmax(180px, 1.5fr) 110px 130px minmax(140px, auto) auto;
   align-items: center;
   gap: 14px;
   padding: 10px 14px 12px;
@@ -330,11 +330,14 @@ code {
 .c-when { font-size: 12px; }
 .c-when.urgent { color: var(--orange); }
 .c-flags { display: flex; gap: 5px; justify-content: flex-end; }
+.c-acts { display: flex; gap: 6px; justify-content: flex-end; }
+.c-acts .btn { line-height: 1.4; }
 
 @media (max-width: 760px) {
   .crow { grid-template-columns: 1fr auto; gap: 6px 12px; }
   .c-exp { grid-column: 1 / -1; flex-direction: row; gap: 8px; }
   .c-flags { grid-column: 1 / -1; justify-content: flex-start; }
+  .c-acts { grid-column: 1 / -1; justify-content: flex-start; }
 }
 
 .time input.num { width: 54px; text-align: right; }
