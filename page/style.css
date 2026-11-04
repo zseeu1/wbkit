@@ -416,3 +416,87 @@ input[type="checkbox"]:focus-visible { outline: var(--focus-ring); outline-offse
   .btn, .card { transition: none; }
   .btn:hover:not(:disabled), .card:hover { transform: none; box-shadow: none; }
 }
+
+/* ============ Redesign v2 · WorkBuddy Greenhouse ============
+   结构：品牌标题条 → 汇总条 → 账号列表 → 控制区 → 信息区 → 页脚。
+   同一套青绿 + 深浅主题；卡片带极轻顶部高光，hover 轻上浮。 */
+body {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: clamp(20px, 3vw, 34px) clamp(16px, 3vw, 34px) 56px;
+  background:
+    radial-gradient(1100px 520px at 12% -12%, color-mix(in srgb, var(--accent) 9%, transparent), transparent 70%),
+    var(--bg);
+}
+.title-row { display: flex; align-items: center; gap: 12px; }
+.brand-mark {
+  width: 30px; height: 30px; border-radius: 10px; flex: none; position: relative;
+  background: linear-gradient(135deg, var(--accent), var(--green));
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+.brand-mark::after {
+  content: ""; position: absolute; inset: 8px;
+  border: 2px solid rgba(4, 33, 26, 0.55);
+  border-radius: 50% 50% 50% 0; transform: rotate(-18deg);
+}
+.top { align-items: center; gap: 20px; padding-bottom: 18px; border-bottom: 1px solid var(--line); margin-bottom: 22px; }
+.top h1 { font-size: 26px; letter-spacing: -0.3px; }
+.lede { margin-top: 6px; max-width: 52em; }
+.seg { background: color-mix(in srgb, var(--fg) 6%, transparent); }
+.seg-btn { padding: 6px 16px; font-weight: 500; }
+.seg-btn.on { background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 22%, var(--bg)), var(--bg)); border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent); }
+
+.overview { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; margin: 0 0 26px; padding: 6px 0 18px; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: none; }
+.overview .ov { padding: 0 22px; border-left: 1px solid var(--line); }
+.overview .ov:first-child { padding-left: 0; border-left: 0; }
+.ov-k { font-size: 12px; }
+.ov-v strong { font-size: 20px; letter-spacing: -0.6px; }
+
+.list-head { margin: 26px 0 14px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.list-head h2 { font-size: 16px; letter-spacing: -0.1px; }
+.cards { grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 18px; }
+.card {
+  position: relative; border-radius: 20px; padding: 20px 20px 16px; overflow: hidden;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--fg) 6%, transparent), color-mix(in srgb, var(--fg) 2.5%, transparent));
+  border: 1px solid color-mix(in srgb, var(--fg) 12%, transparent);
+}
+.card::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 2px; opacity: 0.7; background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 60%, transparent), transparent 70%); }
+.card:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--accent) 32%, transparent); box-shadow: var(--hover-lift); }
+.card-top { gap: 12px; }
+.avatar { width: 38px; height: 38px; border-radius: 12px; font-size: 14px; }
+.names strong { font-size: 15px; }
+.balance { margin-top: 16px; gap: 10px; }
+.balance-v { font-size: 30px; }
+.sect-label { margin: 16px 0 8px; font-size: 12px; letter-spacing: 0.06em; color: var(--muted); }
+.pkgs { gap: 12px; }
+.pkg-bar { height: 6px; }
+.token-line { margin-top: 16px; }
+.card-actions { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 12px; }
+
+.control { border-radius: 20px; padding: 18px 20px; margin-top: 16px; background: linear-gradient(180deg, color-mix(in srgb, var(--fg) 4.5%, transparent), color-mix(in srgb, var(--fg) 2%, transparent)); border: 1px solid color-mix(in srgb, var(--fg) 11%, transparent); }
+.ctl-title { font-size: 14px; letter-spacing: -0.1px; }
+.ctl-sub { font-size: 12px; }
+
+.btn { font-weight: 600; border-radius: 10px; padding: 6px 14px; border-color: transparent; color: #04211a; background: linear-gradient(135deg, var(--accent), var(--green)); }
+.btn:hover:not(:disabled) { filter: saturate(1.05) brightness(1.03); }
+.btn.ghost { background: transparent; border: 1px solid var(--line); color: var(--muted); font-weight: 500; }
+.btn.ghost:hover { color: var(--fg); background: var(--surface-2); }
+.pill { padding: 2px 10px; background: transparent; }
+.rows { border-radius: 18px; }
+.crow { padding: 14px 16px; }
+.foot { margin-top: 34px; padding-top: 18px; }
+
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.card, .control { animation: rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.card:nth-child(2) { animation-delay: 0.04s; }
+.card:nth-child(3) { animation-delay: 0.08s; }
+.card:nth-child(4) { animation-delay: 0.12s; }
+@media (prefers-reduced-motion: reduce) { .card, .control { animation: none; } }
+
+@media (max-width: 760px) {
+  .overview { grid-template-columns: 1fr 1fr; gap: 14px 0; }
+  .overview .ov { padding: 0 16px; }
+  .overview .ov:nth-child(odd) { padding-left: 0; border-left: 0; }
+  .overview .ov:nth-child(3) { padding-left: 0; border-left: 0; }
+}
+@media (max-width: 700px) { .cards { grid-template-columns: 1fr; } }
