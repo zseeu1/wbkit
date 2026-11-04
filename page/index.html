@@ -42,13 +42,13 @@
         <span class="ctl-sub" id="ck-sub">读取中…</span>
         <div class="ctl-accounts" id="ck-accounts"></div>
       </div>
-      <div class="ctl-right">
+      <div class="ctl-right ctl-row">
         <button type="button" class="btn" id="ck-now">立即签到</button>
-        <label class="time">
-          <span>时间</span>
+        <label class="time" id="ck-time-w">
           <input type="time" id="ck-time" value="09:05" />
+          <span>±3 分</span>
         </label>
-        <label class="switch" title="开关每日签到">
+        <label class="switch">
           <input type="checkbox" id="ck-toggle" />
           <span class="track"><span class="knob"></span></span>
         </label>
@@ -61,14 +61,13 @@
         <span class="ctl-sub" id="tv-sub">读取中…</span>
         <div class="ctl-accounts" id="tv-accounts"></div>
       </div>
-      <div class="ctl-right">
+      <div class="ctl-right ctl-row">
         <button type="button" class="btn" id="tv-now">推进一步</button>
-        <label class="time">
-          <span>间隔</span>
-          <input type="number" id="tv-every" min="5" max="720" step="5" value="30" class="num" />
-          <span>分</span>
+        <label class="time" id="tv-every-w">
+          <input type="number" id="tv-every" min="5" max="720" step="5" value="30" />
+          <span>±20%</span>
         </label>
-        <label class="switch" title="开关自动旅行">
+        <label class="switch">
           <input type="checkbox" id="tv-toggle" />
           <span class="track"><span class="knob"></span></span>
         </label>

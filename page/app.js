@@ -192,15 +192,7 @@ function accountCard(a) {
     }
     acts.append(btn)
   }
-  const la = a.lastAction && !(a.lastAction.action === 'checkin' && checkedToday(a)) ? a.lastAction : null
-  const lastEl = el('div', 'last-action')
-  if (la) {
-    lastEl.style.cssText = 'margin-top:8px;font-size:11.5px;color:var(--muted);display:flex;gap:6px;align-items:center;flex-wrap:wrap'
-    lastEl.append(el('span', `pill ${la.ok ? 'ok' : 'warn'}`, `${actionZh(la.action)}${la.ok ? '成功' : '失败'}`))
-    lastEl.append(el('span', null, `${la.message || ''} · ${md(la.at)}`))
-  }
   card.append(head, hero, el('div', 'sect-label', '近期作废'), packList, tokenLine, acts)
-  if (la) card.append(lastEl)
   return card
 }
 
@@ -243,12 +235,7 @@ function compactRow(a, initialOpen = false) {
 
   const flags = el('div', 'c-flags')
   flags.append(el('span', `pill ${a.error || a.health === 'error' ? 'warn' : a.health === 'ok' ? 'ok' : 'warn'}`, a.error ? '登录异常' : a.health === 'ok' ? '可用' : a.healthNote || '待实测'))
-  if (a.lastAction && !(a.lastAction.action === 'checkin' && checkedToday(a))) {
-    const la = a.lastAction
-    const p = el('span', `pill ${la.ok ? 'ok' : 'warn'}`, `${actionZh(la.action)}${la.ok ? '成功' : '失败'}`)
-    if (la.message) p.title = la.message
-    flags.append(p)
-  }
+
 
   const acts = el('div', 'c-acts')
   const actionDone = (action, a) => {
@@ -358,12 +345,7 @@ function compactRow(a, initialOpen = false) {
   tr.append(kv(el('span', null, tv?.label || '—'), el('span', 'c-muted', tv?.last?.message || '')))
   right.append(tr)
 
-  const la = a.lastAction && !(a.lastAction.action === 'checkin' && checkedToday(a)) ? a.lastAction : null
-  if (la) {
-    const ac = sec('最近动作')
-    ac.append(kv(el('span', `pill ${la.ok ? 'ok' : 'warn'}`, `${actionZh(la.action)}${la.ok ? '成功' : '失败'}`), el('span', 'c-muted', `${la.message || ''}${la.at ? ` · ${md(la.at)}` : ''}`)))
-    right.append(ac)
-  }
+
 
   grid.append(left, right)
   inner.append(grid)
@@ -427,7 +409,7 @@ function paintControl() {
   if (ck.at) time.value = ck.at
   const isOn = ck.enabled === true
 
-  sub.textContent = isOn ? `已开，${ck.at} 之后自动签` : '关'
+  sub.textContent = isOn ? `已开，${ck.at}（±3 分钟防风控）` : '关'
   rows.replaceChildren()
 
   const save = async (patch) => {
@@ -463,7 +445,7 @@ function paintTravel() {
 
   toggle.checked = tv.enabled === true
   every.value = String(tv.everyMin || 30)
-  sub.textContent = tv.enabled ? `已开，每 ${tv.everyMin} 分钟推进一步` : '关'
+  sub.textContent = tv.enabled ? `已开，每 ${tv.everyMin} 分钟（±20%）` : '关'
   rows.replaceChildren()
 
   const save = async (patch) => {

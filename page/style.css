@@ -221,16 +221,17 @@ code {
 
 /* 每日签到控制块 */
 .control {
-  margin-top: 24px;
+  margin-top: 16px;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 18px;
-  padding: 14px 16px;
+  gap: 16px;
+  padding: 12px 18px;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--fg) 4%, transparent);
 }
+.ctl-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .ctl-left { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .ctl-title { font-size: 13px; font-weight: 600; }
 .ctl-sub { font-size: 12px; color: var(--muted); }
@@ -238,7 +239,7 @@ code {
 .ck-acc { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
 .ck-name { color: var(--fg); }
 .ck-when { color: var(--muted); }
-.ctl-right { display: flex; align-items: center; gap: 14px; flex: none; }
+.ctl-right { flex: none; }
 
 .time { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--muted); }
 .time input {
@@ -340,7 +341,7 @@ code {
   .c-acts { grid-column: 1 / -1; justify-content: flex-start; }
 }
 
-.time input.num { width: 54px; text-align: right; }
+.time input.num { width: 52px; text-align: center; }
 .ctl-accounts .ck-when { max-width: 22em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .transfer { align-items: flex-start; }
