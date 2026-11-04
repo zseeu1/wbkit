@@ -104,6 +104,17 @@ function packageRow(p) {
   return row
 }
 
+// 今天是否已签到：已签到时不再显示「签到」按钮，避免和状态胶囊重复
+function checkedToday(a) {
+  const c = a?.checkin
+  if (!c) return false
+  if (!(c.outcome === 'done' || c.outcome === 'claimed')) return false
+  const today = V?.checkin?.today
+  if (c.date) return c.date === today
+  if (c.at) return new Date(c.at).toDateString() === new Date().toDateString()
+  return true
+}
+
 async function triggerAction(a, action) {
   try {
     const opts = (await magpie.options.get()) || {}
@@ -145,6 +156,7 @@ function accountCard(a) {
   const acts = el('div', 'card-actions')
   acts.style.cssText = 'display:flex;gap:8px;margin-top:10px;flex-wrap:wrap'
   for (const [action, label] of [['checkin', '签到'], ['travel', '旅行'], ['growth', '成长']]) {
+    if (action === 'checkin' && checkedToday(a)) continue
     const btn = el('button', 'btn ghost', label)
     btn.type = 'button'
     btn.style.cssText = 'font-size:12px;padding:5px 12px;border-radius:8px'
@@ -202,6 +214,7 @@ function compactRow(a) {
 
   const acts = el('div', 'c-acts')
   for (const [action, label] of [['checkin', '签到'], ['travel', '旅行'], ['growth', '成长']]) {
+    if (action === 'checkin' && checkedToday(a)) continue
     const btn = el('button', 'btn ghost', label)
     btn.type = 'button'
     btn.style.cssText = 'font-size:11px;padding:3px 9px;border-radius:7px;white-space:nowrap'
