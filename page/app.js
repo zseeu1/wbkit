@@ -109,6 +109,23 @@ function actionZh(a) {
 }
 
 // 今天是否已签到：已签到时不再显示「签到」按钮，避免和状态胶囊重复
+const actionDone = (action, a) => {
+  if (action === 'checkin') return checkedToday(a)
+  if (action === 'travel') {
+    const tv = (V?.travel?.accounts || []).find((x) => a.label && x.accountId === a.label)
+    const isTraveling = !!(tv && tv.state === 'traveling')
+    const la = a.lastAction
+    return isTraveling || (la && la.action === 'travel' && la.ok)
+  }
+  if (action === 'growth') {
+    const ts = a.taskStats
+    const allDone = !!(ts && ts.done === ts.total && ts.notAccepted === 0)
+    const la = a.lastAction
+    return allDone || (la && la.action === 'growth' && la.ok)
+  }
+  return false
+}
+
 function checkedToday(a) {
   const c = a?.checkin
   if (c && (c.outcome === 'done' || c.outcome === 'claimed')) {
@@ -164,22 +181,6 @@ function accountCard(a) {
 
   const acts = el('div', 'card-actions')
   acts.style.cssText = 'display:flex;gap:8px;margin-top:10px;flex-wrap:wrap'
-  const actionDone = (action, a) => {
-    if (action === 'checkin') return checkedToday(a)
-    if (action === 'travel') {
-      const tv = (V?.travel?.accounts || []).find((x) => a.label && x.accountId === a.label)
-      const isTraveling = !!(tv && tv.state === 'traveling')
-      const la = a.lastAction
-      return isTraveling || (la && la.action === 'travel' && la.ok)
-    }
-    if (action === 'growth') {
-      const ts = a.taskStats
-      const allDone = !!(ts && ts.done === ts.total && ts.notAccepted === 0)
-      const la = a.lastAction
-      return allDone || (la && la.action === 'growth' && la.ok)
-    }
-    return false
-  }
   for (const [action, label] of [['checkin', '签到'], ['travel', '旅行'], ['growth', '成长']]) {
     const done = actionDone(action, a)
     const btn = el('button', 'btn ghost', done ? (action === 'checkin' ? '已签到' : action === 'travel' ? '旅行中' : '已完成') : label)
@@ -216,7 +217,6 @@ function paintDensity() {
 
 // 紧凑模式：一行一个账号，账号多了也不占屏
 function compactRow(a, initialOpen = false) {
-  { // scope guard
   const row = el('div', 'crow')
   const who = el('div', 'c-who')
   who.append(el('span', 'avatar sm', String(a.label || '?').slice(0, 1)))
@@ -237,7 +237,9 @@ function compactRow(a, initialOpen = false) {
   const pct = sizeNum > 0 ? Math.max(2, Math.min(100, (Number(a.balance) / sizeNum) * 100)) : (Number(a.balance) > 0 ? 100 : 2)
   balFill.style.width = `${pct}%`
   balMeter.append(balFill)
-  bal.append(el('div', 'c-bal-top', [balNum, balSub]), balMeter)
+  const balTop = el('div', 'c-bal-top')
+  balTop.append(balNum, balSub)
+  bal.append(balTop, balMeter)
 
   // 状态图标：4 个小圆点
   const dots = el('div', 'c-dots')
@@ -251,7 +253,6 @@ function compactRow(a, initialOpen = false) {
 
   const chev = el('span', 'c-chevron', '›')
 
-  } // end scope guard
   row.append(who, bal, dots, chev)
   const detail = el('div', 'c-detail')
   const inner = el('div', 'c-detail-in')
@@ -288,7 +289,7 @@ function compactRow(a, initialOpen = false) {
   const detPct = Number(a.size) > 0 ? Math.max(2, Math.min(100, (Number(a.balance) / Number(a.size)) * 100)) : 2
   dfill.style.width = `${detPct}%`
   dmeter.append(dfill)
-  overview.append(meter)
+  overview.append(dmeter)
   left.append(overview)
 
   const pk = sec(`积分包 · 共 ${a.packagesTotal ?? 0} 个`)
