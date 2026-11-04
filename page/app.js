@@ -70,11 +70,21 @@ function paintOverview() {
   const rows = accounts()
   const balance = rows.reduce((s, a) => s + (Number(a.balance) || 0), 0)
   const size = rows.reduce((s, a) => s + (Number(a.size) || 0), 0)
-  const soonest = rows.flatMap((a) => a.packages ?? []).map((p) => p.runsOutAt).filter(Boolean).sort()[0] || 0
+  // 最近作废：不只给时间，还给出是哪个账号、多少积分
+  const soonPkgs = rows
+    .flatMap((a) => (a.packages ?? []).filter((p) => p.runsOutAt).map((p) => ({ at: p.runsOutAt, bal: Number(p.balance) || 0, label: a.label })))
+    .sort((x, y) => x.at - y.at)
+  const soonest = soonPkgs[0]?.at || 0
+  const soonAt = soonPkgs.filter((x) => x.at === soonest)
+  const soonBal = Math.round(soonAt.reduce((s, x) => s + x.bal, 0) * 100) / 100
+  const soonWho = [...new Set(soonAt.map((x) => x.label))].filter(Boolean)
+  const soonSub = soonest
+    ? `${days(soonest)} 天后 · ${soonWho.join(' / ') || '未知账号'} ${num(soonBal)} 积分`
+    : '无临期积分'
   const cells = [
     { k: '可用积分', v: num(Math.round(balance * 100) / 100), sub: size ? `/ ${num(size)}` : '' },
     { k: '账号', v: String(rows.length), sub: `可用 ${rows.filter((a) => a.health === 'ok').length}` },
-    { k: '最近作废', v: soonest ? md(soonest) : '—', sub: soonest ? `${days(soonest)} 天后` : '无临期积分' },
+    { k: '最近作废', v: soonest ? md(soonest) : '—', sub: soonSub },
   ]
   for (const c of cells) {
     const box = el('div', 'ov')
