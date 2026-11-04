@@ -145,6 +145,18 @@
       "label": {
         "displayName": "Label",
         "purpose": "徽标、小标题、时间戳。"
+      },
+      "metric": {
+        "displayName": "Metric",
+        "purpose": "紧凑行余额等中等数字。"
+      },
+      "metric-lg": {
+        "displayName": "Metric Large",
+        "purpose": "概览区数值。"
+      },
+      "mono": {
+        "displayName": "Mono",
+        "purpose": "令牌/路径/日期等技术短串。"
       }
     },
     "shadows": [

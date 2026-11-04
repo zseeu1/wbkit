@@ -4,6 +4,7 @@ description: WorkBuddy 的 magpie 补位插件——多账号、签到、猫猫�
 colors:
   buddy-teal: "#00c0a0"
   buddy-teal-strong: "#0a8f78"
+  teal-ink: "#18c4a8"
   signal-green: "#14b877"
   alert-amber: "#e8912f"
   canvas-dark: "#101012"
@@ -37,11 +38,28 @@ typography:
     lineHeight: 1.55
   label:
     fontFamily: "-apple-system, \"SF Pro Text\", system-ui, sans-serif"
-    fontSize: "11.5px"
+    fontSize: "12px"
     fontWeight: 600
     lineHeight: 1.4
+  metric:
+    fontFamily: "-apple-system, \"SF Pro Text\", system-ui, sans-serif"
+    fontSize: "16px"
+    fontWeight: 650
+    lineHeight: 1.3
+  metric-lg:
+    fontFamily: "-apple-system, \"SF Pro Text\", system-ui, sans-serif"
+    fontSize: "20px"
+    fontWeight: 650
+    lineHeight: 1.2
+  mono:
+    fontFamily: "ui-monospace, SFMono-Regular, \"SF Mono\", Menlo, monospace"
+    fontSize: "11px"
+    fontWeight: 400
+    lineHeight: 1.5
 rounded:
+  xs: "6px"
   sm: "8px"
+  sm-2: "7px"
   md: "9px"
   lg: "10px"
   xl: "16px"
@@ -110,7 +128,7 @@ wbkit 是深色工作台里的一块"温室"：底色近黑、结构安静，青
 - **Console Black** (`#101012`)：深色画布。
 - **Paper White** (`#f7f9f8`)：浅色画布。
 - **Ink Dark** (`#ececee`) / **Ink Light** (`#1b2320`)：对应主题的正文色，其余中性色从它派生。
-- 表面 = `color-mix(in srgb, fg 4%, transparent)`，次级表面 8%，分割线 12%，次要文字 55%。**不要写死灰色**。
+- 表面 = `color-mix(in srgb, fg 4%, transparent)`，次级表面 8%，分割线 12%，次要文字约 64%（保证浅色主题正文对比 ≥4.5:1）。**不要写死灰色**。
 
 ### Named Rules
 
@@ -130,7 +148,7 @@ wbkit 是深色工作台里的一块"温室"：底色近黑、结构安静，青
 - **Headline** (700, 26px)：页面标题（"账号"）。
 - **Title** (650, 14.5–15px)：卡片账号名、分区标题。
 - **Body** (400, 13px, 1.55)：说明、行内文本。
-- **Label** (600, 11.5px)：徽标、区块小标题、时间戳；必要时用 muted 色。
+- **Label** (600, 12px)：徽标、区块小标题、时间戳；必要时用 muted 色。
 
 ### Named Rules
 
