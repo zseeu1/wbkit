@@ -36,6 +36,7 @@
       </div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button data-refresh style="border:1px solid #b9d8cf;border-radius:9px;background:#fff;color:#0f3d33;padding:8px 12px;font-size:13px;cursor:pointer">刷新</button>
       <button data-open style="border:0;border-radius:9px;background:#0f9c78;color:#fff;padding:8px 14px;font-size:13px;cursor:pointer">打开看板</button>
       <button data-on style="border:1px solid #b9d8cf;border-radius:9px;background:#fff;color:#0f3d33;padding:8px 12px;font-size:13px;cursor:pointer">常驻开启</button>
       <button data-off style="border:1px solid #e0d4c0;border-radius:9px;background:#fff;color:#7a5b2c;padding:8px 12px;font-size:13px;cursor:pointer">停止服务</button>
@@ -53,6 +54,25 @@
       if (modeEl) modeEl.textContent = '保存失败：' + (e?.message ?? e)
     }
   }
+  // 刷新：面板数据只是插件加载时写的一份快照，页面自己连不了网。点刷新就改一次
+  // options（宿主会重载插件 → 重生成 page/data.js），稍后整页重载拿新快照。
+  const refreshPanel = async () => {
+    try {
+      if (modeEl) modeEl.textContent = '刷新中…（重载插件并重生成快照）'
+      if (mp?.options?.set) {
+        const cur = (await mp.options.get?.()) || opts || {}
+        await mp.options.set({ ...cur, refreshAt: Date.now() })
+        setTimeout(() => {
+          try { location.reload() } catch {}
+        }, 2500)
+      } else {
+        try { location.reload() } catch {}
+      }
+    } catch (e) {
+      if (modeEl) modeEl.textContent = '刷新失败：' + (e?.message ?? e)
+    }
+  }
+
   const openBoard = () => {
     // magpie 的插件页是沙盒 iframe，window.open 会被拦。优先整页自导航到
     // magpie.service（同一 magpie 窗口内反代到本服务）；没有再退回新窗口/复制地址。
@@ -70,6 +90,7 @@
       if (modeEl) modeEl.textContent = '弹窗被拦，地址已复制：' + dashboard
     }
   }
+  bar.querySelector('[data-refresh]')?.addEventListener('click', refreshPanel)
   bar.querySelector('[data-open]')?.addEventListener('click', () => {
     if (mode === 'off') {
       if (modeEl) modeEl.textContent = '后台服务已停用：先点『常驻开启』，插件重载后再开看板'
