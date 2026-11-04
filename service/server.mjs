@@ -1960,7 +1960,8 @@ export async function startDaemon(opts = {}) {
   // ---- 绑定端口（被占用则向后找，最后随机） --------------------------------
 
   async function bind(hostName, startPort) {
-    const candidates = startPort > 0 ? [startPort, ...Array.from({ length: 9 }, (_, i) => startPort + 1 + i), 0] : [0]
+    const strict = process.env.WB_STRICT_PORT === "1"
+    const candidates = startPort > 0 ? (strict ? [startPort] : [startPort, ...Array.from({ length: 9 }, (_, i) => startPort + 1 + i), 0]) : [0]
     for (const p of candidates) {
       const s = serverOf(handler)
       try {

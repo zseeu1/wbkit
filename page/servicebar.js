@@ -53,12 +53,34 @@
       if (modeEl) modeEl.textContent = '保存失败：' + (e?.message ?? e)
     }
   }
-  bar.querySelector('[data-open]')?.addEventListener('click', () => {
+  const openBoard = () => {
+    // magpie 的插件页是沙盒 iframe，window.open 会被拦。优先整页自导航到
+    // magpie.service（同一 magpie 窗口内反代到本服务）；没有再退回新窗口/复制地址。
     try {
-      window.open(dashboard, '_blank', 'noopener')
+      if (mp && typeof mp.service === 'string' && mp.service) {
+        location.href = dashboard
+        return
+      }
+    } catch {}
+    try {
+      const w = window.open(dashboard, '_blank', 'noopener')
+      if (!w) throw new Error('popup blocked')
     } catch {
-      /* 沙盒页禁止弹窗时，给出地址 */
+      try { navigator.clipboard?.writeText(dashboard) } catch {}
+      if (modeEl) modeEl.textContent = '弹窗被拦，地址已复制：' + dashboard
     }
+  }
+  bar.querySelector('[data-open]')?.addEventListener('click', () => {
+    if (mode === 'off') {
+      if (modeEl) modeEl.textContent = '后台服务已停用：先点『常驻开启』，插件重载后再开看板'
+      return
+    }
+    if (mode !== 'on') {
+      setMode('on')
+      if (modeEl) modeEl.textContent = '已开启后台服务，等插件重载（几秒）后再点一次「打开看板」'
+      return
+    }
+    openBoard()
   })
   bar.querySelector('[data-on]')?.addEventListener('click', () => setMode('on'))
   bar.querySelector('[data-off]')?.addEventListener('click', () => setMode('off'))

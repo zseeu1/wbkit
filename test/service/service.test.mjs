@@ -57,7 +57,7 @@ test('服务只接受本机 Host（防 DNS rebinding）', async () => {
     const ok = await fetch(ctx.base + '/api/hello')
     assert.equal(ok.status, 200)
     const j = await ok.json()
-    assert.equal(j.name, 'wbkit-tasks')
+    assert.equal(j.name, 'wbkit')
     assert.equal(j.ready, true)
   } finally { stop(ctx) }
 })

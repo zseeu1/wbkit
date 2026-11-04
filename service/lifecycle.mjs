@@ -19,7 +19,7 @@ import { homedir } from "node:os"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 
-export const PLUGIN_NAME = "wbkit-tasks"
+export const PLUGIN_NAME = "wbkit"
 export const DEFAULT_PORT = 4390
 const SPAWN_BUDGET_MS = 8000
 
@@ -205,7 +205,7 @@ export function interpreter() {
 //   off      —— control.json.desired === 'off'，宿主不该拉起
 //   spawned  —— 本次是否由我们 spawn（exit 钩子据此决定要不要叫它退场）
 //   info     —— 就绪守护进程的 {pid,port,key,...}；没就绪时为 null
-export async function ensureDaemon({ cfgDir, pluginDir, log = () => {}, budgetMs = SPAWN_BUDGET_MS, addr = "" } = {}) {
+export async function ensureDaemon({ cfgDir, pluginDir, log = () => {}, budgetMs = SPAWN_BUDGET_MS, addr = "", port: desiredPort = 0 } = {}) {
   if (!cfgDir) {
     return { info: null, spawned: false, error: "无法定位 magpie 配置目录（可设 MAGPIE_CONFIG_DIR 环境变量）" }
   }
@@ -231,7 +231,10 @@ export async function ensureDaemon({ cfgDir, pluginDir, log = () => {}, budgetMs
   }
 
   const key = prev?.key || daemonKey()
-  const port = prev?.port || DEFAULT_PORT
+  // 端口优先级：显式 desiredPort（来自 magpie.page.service）> 上次记录 > 默认。
+  // 上次记录可能来自已退出的旧进程（例如先被别的插件占了 4390 退到 4391），
+  // 不能用它盖掉显式端口，否则页面反代（固定 4390）会指错。
+  const port = desiredPort > 0 ? desiredPort : (prev?.port || DEFAULT_PORT)
   const env = {
     ...process.env,
     WB_CONFIG_DIR: cfgDir,
@@ -239,6 +242,7 @@ export async function ensureDaemon({ cfgDir, pluginDir, log = () => {}, budgetMs
     WB_DAEMON_KEY: key,
     WB_DAEMON_PORT: String(port),
     ...(addr ? { WB_DAEMON_ADDR: String(addr) } : {}),
+    ...(desiredPort > 0 ? { WB_STRICT_PORT: "1" } : {}),
     WB_MANAGED: "1", // 由 magpie 宿主拉起：plugins.json 里条目消失时允许自杀
   }
   let child

@@ -14,6 +14,7 @@
 //
 // 注意：入口导出的每个函数都会被 magpie 当作一个插件调用，所以这里只导出一个插件
 // 函数，其余一律挂在 _internal 上。
+import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { makeTools } from './lib/tools.mjs'
@@ -78,7 +79,17 @@ async function ensureService(opts) {
   }
   const cfgDir = resolveCfgDir()
   writeControl(stateDirFor(cfgDir), 'on')
-  const r = await ensureDaemon({ cfgDir, pluginDir: serviceDir(), log })
+  // 页面反代的端口写死在 package.json 的 magpie.page.service.port，服务必须绑同一个；
+  // 选项 servicePort 可覆盖（两边要一致）。否则 magpie 反代到 4390、服务在 4391，看板打不开。
+  let desiredPort = Number(opts?.servicePort) > 0 ? Number(opts.servicePort) : 0
+  if (!desiredPort) {
+    try {
+      const pkg = JSON.parse(readFileSync(join(hereDir(), 'package.json'), 'utf8'))
+      const p = Number(pkg?.magpie?.page?.service?.port)
+      if (p > 0) desiredPort = p
+    } catch {}
+  }
+  const r = await ensureDaemon({ cfgDir, pluginDir: serviceDir(), log, port: desiredPort })
   if (mode === 'lazy') scheduleIdle()
   return r
 }
