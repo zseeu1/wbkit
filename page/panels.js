@@ -16,6 +16,10 @@
       ${sub ? `<div style="margin-top:4px;font-size:11px;color:#8aa39b">${esc(sub)}</div>` : ''}
     </div>`
 
+  const st = V.stats || {}
+  const rm = V.reminders || []
+  const h = V.history || []
+
   const today = card(
     '今日',
     `<b style="font-size:18px;color:#0f9c78">+${esc(st.creditsToday ?? 0)}</b> 积分
