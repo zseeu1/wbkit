@@ -27,20 +27,6 @@
 - `wbkit_growth action=task` 仍是进程内引擎流水线，并把结果追加到历史（面板读）
 - 测试 60 条全绿
 
-## v0.4.0
-
-**合并两个 WorkBuddy 插件为一体（wbkit 仍是唯一要装的补位插件）**
-
-- 并入 `jichie/magpie-workbuddy-tasks` 的批量任务引擎（`lib/engine/`）与本地服务（`service/`）：任务流水线「接取→点亮→轮询进度→达标才领奖」、任务级勾选、猫猫旅行、夜猫子、每日活跃、积分套餐明细、job/历史/SSE、风控冷却（1s 间隔、403/11140 冷却 120 分钟）
-- 并入 `sabercomo/magpie-workbuddy-plus` 的模型目录与套餐视图（`lib/models.mjs`、`lib/wbclient.mjs`）：国内/国际模型、积分倍率、上下文、档位/促销、当前套餐；只读，不调模型、不花积分
-- 新增工具 `wbkit_tasks`（status/run/wait/list/claim）与 `wbkit_models`
-- **后台服务默认「懒启动」**：插件加载不起进程；用工具或点页面「打开看板」才拉起，空闲 30 分钟自动退出。选项 `service` = `lazy`(默认) / `on` / `off`；`magpie.page.service` 让看板在 magpie 窗口内打开（退回入口卡 + 地址）
-- 安全加固（覆盖原 jichie 服务的无鉴权面）：只接受回环 Host（防 DNS rebinding，需反代时设 `WBKIT_ALLOWED_HOSTS`）、POST 必须 `application/json`（挡跨站表单）、只绑 127.0.0.1、CSP/nosniff、令牌永不进页面
-- 调度唯一归属：服务在跑时旅行/夜猫交给引擎的北京时间窗口（09/21、01），wbkit 的间隔旅行让路，避免同账号重复旅行；签到仍先看 magpie 原生记录再补位
-- 账号读取同时识别 `workbuddy`/`codebuddy` 两套 id（`lib/engine/store.mjs`），移植引擎不会因 magpie 改名读不到账号
-- 测试 63 条（新增引擎口径、服务加固/生命周期、模型目录）
-- 账号页新增「刷新」按钮（改 options 触发插件重载重生成快照）；面板直接显示后台排程、今日统计、提醒（积分/登录快到期）、最近执行历史；积分包改为全量（最多 50 个，来自本地 credits 缓存）+ 最早到期
-
 ## v0.3.1
 
 - 账号页认识社区插件的三种登录（`lib/view.mjs`）：浏览器登录照常显示余额与积分包；桌面登录态与 API Key 也会列出来（分别显示账号名 / `API key ·尾四位`），但不再去打余额接口、不再显示成「读取失败」，而是写清为什么读不到
