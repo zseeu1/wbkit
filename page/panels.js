@@ -1,33 +1,40 @@
-// 面板只读区块（0.5.0）：成长任务自动面板（顶部）+ 任务进度表（中部）。
+// 面板只读区块（0.5.0）：成长任务自动面板 + 任务进度表（猫猫旅行下方）。
 // 数据来自插件加载时写的 page/data.js（globalThis.WBKIT）。
 // 沙盒页无网络，这里只负责渲染，不发任何请求。
 ;(function () {
   if (typeof document === 'undefined') return
   const V = globalThis.WBKIT
   if (!V || !V.totals) return
-  const ov = document.getElementById('overview')
-  if (!ov) return
+  const travelPanel = document.getElementById('travel')
+  if (!travelPanel) return
 
   const mp = globalThis.magpie
   const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = String(text); return e }
 
-  // ---- 成长任务每日自动（紧贴概览区下方）-----
+  // ---- 成长任务每日自动（与签到/旅行统一的 control 面板）-----
   const auto = V.panel || {}
-  const autoEl = document.createElement('div')
-  autoEl.style.cssText = 'margin-top:16px;padding:12px 16px;border:1px solid var(--line);border-radius:var(--radius);display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--fg)'
-  autoEl.innerHTML = `
-    <span style="font-weight:600;font-size:13px">成长任务每日自动</span>
-    <label style="display:flex;align-items:center;gap:6px">
-      <input type="checkbox" data-a-auto ${auto.autoTasks ? 'checked' : ''}/>
-      开启
-    </label>
-    <span>每天</span>
-    <input type="time" data-a-at value="${String(auto.taskAt || '09:10')}" style="font:inherit;font-size:12px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:3px 7px"/>
-    <span style="color:var(--muted);font-size:12px">到点自动跑一轮（北京）</span>`
-  ov.insertAdjacentElement('afterend', autoEl)
+  const autoPanel = el('section', 'control')
+  autoPanel.innerHTML = `
+    <div class="ctl-left">
+      <span class="ctl-title">成长任务</span>
+      <span class="ctl-sub">${auto.autoTasks ? `已开，每天 ${auto.taskAt || '09:10'} 自动跑一轮` : '关（打开后到点自动对所有账号跑一轮成长任务）'}</span>
+    </div>
+    <div class="ctl-right" style="display:flex;align-items:center;gap:14px">
+      <label class="time">
+        <span>时间</span>
+        <input type="time" data-a-at value="${String(auto.taskAt || '09:10')}" style="font:inherit;font-size:12px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:3px 7px"/>
+      </label>
+      <label class="switch">
+        <input type="checkbox" data-a-auto ${auto.autoTasks ? 'checked' : ''}/>
+        <span class="track"><span class="knob"></span></span>
+      </label>
+    </div>`
+  travelPanel.insertAdjacentElement('afterend', autoPanel)
 
-  const autoCb = autoEl.querySelector('[data-a-auto]')
-  const autoAt = autoEl.querySelector('[data-a-at]')
+  const autoCb = autoPanel.querySelector('[data-a-auto]')
+  const autoAt = autoPanel.querySelector('[data-a-at]')
+  const autoSub = autoPanel.querySelector('.ctl-sub')
   let saving = false
   const saveAuto = async () => {
     if (saving) return; saving = true
@@ -35,13 +42,14 @@
       if (mp?.options?.get && mp?.options?.set) {
         const cur = (await mp.options.get()) || {}
         await mp.options.set({ ...cur, autoTasks: !!autoCb.checked, taskAt: autoAt.value || '09:10' })
+        if (autoSub) autoSub.textContent = autoCb.checked ? `已开，每天 ${autoAt.value || '09:10'} 自动跑一轮` : '关（打开后到点自动对所有账号跑一轮成长任务）'
       }
     } catch {} finally { saving = false }
   }
   autoCb?.addEventListener('change', saveAuto)
   autoAt?.addEventListener('change', saveAuto)
 
-  // ---- 任务进度表（概览区与账号列表之间）-----
+  // ---- 任务进度表（成长任务面板下方）-----
   const withTasks = (V.accounts || []).filter((a) => a.taskStats && a.taskStats.total > 0)
   if (withTasks.length) {
     const rows = withTasks.map((a) => {
@@ -59,7 +67,7 @@
         <td style="padding:5px 8px;color:var(--muted)">${open || (a.tasksError ? esc(a.tasksError) : '—')}</td>
       </tr>`
     }).join('')
-    const sec = document.createElement('section')
+    const sec = el('section')
     sec.style.cssText = 'margin:18px 0 6px'
     sec.innerHTML = `<h2 style="font-size:14px;color:var(--fg);margin:0 0 6px">任务进度</h2>
       <div style="overflow:auto;border:1px solid var(--line);border-radius:var(--radius)">
@@ -68,6 +76,6 @@
           <th style="padding:6px 8px">账号</th><th style="padding:6px 8px">已完成</th>
           <th style="padding:6px 8px">进行中</th><th style="padding:6px 8px">待接取</th><th style="padding:6px 8px">未完成</th>
         </tr></thead><tbody>${rows}</tbody></table></div>`
-    autoEl.insertAdjacentElement('afterend', sec)
+    autoPanel.insertAdjacentElement('afterend', sec)
   }
 })()
