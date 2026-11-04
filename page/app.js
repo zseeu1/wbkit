@@ -263,6 +263,7 @@ function compactRow(a, initialOpen = false) {
   }
   for (const [action, label] of [['checkin', '签到'], ['travel', '旅行'], ['growth', '成长']]) {
     const done = actionDone(action, a)
+    const btn = el('button', 'btn ghost', done ? (action === 'checkin' ? '已签到' : action === 'travel' ? '旅行中' : '已完成') : label)
     btn.type = 'button'
     btn.disabled = done
     btn.style.cssText = 'font-size:11px;padding:3px 9px;border-radius:7px;white-space:nowrap'
