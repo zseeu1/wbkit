@@ -177,7 +177,7 @@ function accountCard(a) {
     }
     acts.append(btn)
   }
-  const la = a.lastAction
+  const la = a.lastAction && !(a.lastAction.action === 'checkin' && checkedToday(a)) ? a.lastAction : null
   const lastEl = el('div', 'last-action')
   if (la) {
     lastEl.style.cssText = 'margin-top:8px;font-size:11.5px;color:var(--muted);display:flex;gap:6px;align-items:center;flex-wrap:wrap'
@@ -228,7 +228,7 @@ function compactRow(a) {
 
   const flags = el('div', 'c-flags')
   flags.append(el('span', `pill ${a.error || a.health === 'error' ? 'warn' : a.health === 'ok' ? 'ok' : 'warn'}`, a.error ? '登录异常' : a.health === 'ok' ? '可用' : a.healthNote || '待实测'))
-  if (a.lastAction) {
+  if (a.lastAction && !(a.lastAction.action === 'checkin' && checkedToday(a))) {
     const la = a.lastAction
     const p = el('span', `pill ${la.ok ? 'ok' : 'warn'}`, `${actionZh(la.action)}${la.ok ? '成功' : '失败'}`)
     if (la.message) p.title = la.message
