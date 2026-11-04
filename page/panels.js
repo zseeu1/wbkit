@@ -38,7 +38,7 @@
   wrap.className = 'panel-readonly'
   wrap.style.cssText = 'display:flex;gap:12px;flex-wrap:wrap;margin:12px 0 4px'
   wrap.innerHTML = today + reminders
-  ov.insertAdjacentElement('afterend', wrap)
+  document.body.appendChild(wrap)
 
   // 任务进度（快照里带了 taskStats/tasks 才显示）
   const withTasks = (V.accounts || []).filter((a) => a.taskStats && a.taskStats.total > 0)

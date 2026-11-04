@@ -332,6 +332,18 @@ function paintTransfer() {
   const importBtn = document.getElementById('tf-import')
   const exportBtn = document.getElementById('tf-export')
   const area = document.getElementById('tf-text')
+  const actions = document.getElementById('tf-actions')
+  const toggle = document.getElementById('tf-toggle')
+  const bodyEls = [area, status, actions]
+  const setOpen = (open) => {
+    for (const node of bodyEls) if (node) node.hidden = !open
+    if (toggle) { toggle.textContent = open ? '收起' : '展开'; toggle.setAttribute('aria-expanded', String(open)) }
+  }
+  if (toggle && !toggle.dataset.bound) {
+    toggle.dataset.bound = '1'
+    toggle.addEventListener('click', () => setOpen(toggle.textContent === '展开'))
+  }
+  setOpen(false)
 
   status.replaceChildren()
   const lastImport = tf.lastImport

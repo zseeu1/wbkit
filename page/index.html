@@ -74,12 +74,15 @@
 
     <section class="control transfer" id="transfer">
       <div class="ctl-left">
-        <span class="ctl-title">导入 / 导出账号</span>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="ctl-title">导入 / 导出账号</span>
+          <button type="button" class="btn ghost" id="tf-toggle" aria-expanded="false">展开</button>
+        </div>
         <span class="ctl-sub" id="tf-sub">把 wb-switch 的导出整份粘进来，或者把 magpie 里的账号导回去。</span>
-        <textarea id="tf-text" rows="4" spellcheck="false" placeholder='粘贴 wb-switch 导出的 JSON：[{"uid":"…","access_token":"…","refresh_token":"…","nickname":"…"}]'></textarea>
-        <div class="ctl-accounts" id="tf-status"></div>
+        <textarea id="tf-text" rows="4" spellcheck="false" hidden placeholder='粘贴 wb-switch 导出的 JSON：[{"uid":"…","access_token":"…","refresh_token":"…","nickname":"…"}]'></textarea>
+        <div class="ctl-accounts" id="tf-status" hidden></div>
       </div>
-      <div class="ctl-right tf-actions">
+      <div class="ctl-right tf-actions" id="tf-actions" hidden>
         <button type="button" class="btn" id="tf-import">导入到 magpie</button>
         <button type="button" class="btn ghost" id="tf-export">导出 wb-switch 格式</button>
       </div>
