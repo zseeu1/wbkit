@@ -529,3 +529,29 @@ body {
 .c-pkg-amt { color: var(--fg); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .c-pkg-when { color: var(--muted); font-size: 11px; white-space: nowrap; }
 .c-task-line { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* 展开详情 v3：两栏分组、对齐、减少重复（对齐 WorkBuddy Plus 的列表观感） */
+.c-detail-in { background: color-mix(in srgb, var(--fg) 3%, transparent); }
+.c-detail-grid { display: grid; grid-template-columns: 1.05fr 1fr; gap: 0; padding: 0; }
+.c-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; padding: 14px 18px 16px 56px; }
+.c-col + .c-col { border-left: 1px solid var(--line); padding-left: 18px; }
+.c-sec { min-width: 0; }
+.c-sec-h { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.c-kv { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12.5px; color: var(--fg); }
+.c-muted { font-size: 11.5px; color: var(--muted); }
+.c-pkg-group { padding: 6px 0; border-bottom: 1px dashed color-mix(in srgb, var(--fg) 8%, transparent); }
+.c-pkg-group:last-child { border-bottom: 0; padding-bottom: 0; }
+.c-pkg-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 12.5px; }
+.c-pkg-name { color: var(--fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.c-pkg-amt { color: var(--fg); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.c-pkg-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.c-task-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 12px; color: var(--muted); padding: 2px 0; }
+.c-task-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.c-task-meta { white-space: nowrap; font-variant-numeric: tabular-nums; }
+@media (max-width: 760px) {
+  .c-detail-grid { grid-template-columns: 1fr; }
+  .c-col { padding: 12px 16px; }
+  .c-col + .c-col { border-left: 0; border-top: 1px solid var(--line); padding-left: 16px; }
+}
+.c-meter { height: 6px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin-top: 6px; }
+.c-meter span { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 70%, transparent), var(--green)); }

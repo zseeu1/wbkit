@@ -155,7 +155,7 @@ function accountCard(a) {
   const packList = el('div', 'pkgs')
   if (a.error) packList.append(el('p', 'muted', a.error))
   else if (!packs) packList.append(el('p', 'muted', '没有可用的积分包'))
-  else for (const p of a.packages) packList.append(packageRow(p))
+  else for (const p of a.packages.slice(0, 5)) packList.append(packageRow(p))
 
   const tokenLine = el('div', 'token-line')
   const d = days(a.expiresAt)
@@ -259,38 +259,81 @@ function compactRow(a, initialOpen = false) {
   const inner = el('div', 'c-detail-in')
   const grid = el('div', 'c-detail-grid')
 
-  const left = el('div', 'c-col')
-  left.append(el('div', 'c-detail-h', `积分包 · ${a.packagesTotal ?? 0} 个`))
-  if (a.packages?.length) {
-    for (const p of a.packages) {
-      const line = el('div', 'c-pkg-line')
-      line.append(el('span', 'c-pkg-name', p.name))
-      line.append(el('span', 'c-pkg-amt', `${num(p.balance)} 积分`))
-      line.append(el('span', 'c-pkg-when', p.runsOutAt ? md(p.runsOutAt) : '长期'))
-      left.append(line)
-    }
-  } else left.append(el('p', 'muted', '没有可用的积分包'))
-
-  const right = el('div', 'c-col')
-  const ci = (V?.checkin?.accounts || []).find((x) => (a.uid && x.uid === a.uid) || (a.label && x.accountId === a.label))
-  right.append(el('div', 'c-detail-h', '每日签到'))
-  right.append(el('div', 'c-detail-line', ci ? `${outcomeText(ci.outcome)} · ${md(ci.at)}` : checkedToday(a) ? '今天已签到' : '今天未签到'))
-
-  right.append(el('div', 'c-detail-h', '成长'))
-  const ts = a.taskStats
-  right.append(el('div', 'c-detail-line', ts ? `任务 ${ts.done}/${ts.total} · 进行中 ${ts.active} · 待接取 ${ts.notAccepted}` : a.tasksError ? `读取失败：${a.tasksError}` : '暂无任务快照'))
-  for (const t of (a.tasks || []).filter((x) => !(x.target > 0 && x.current >= x.target)).slice(0, 3)) {
-    right.append(el('div', 'c-task-line', `${t.title} · ${t.current}/${t.target}${t.reward ? ` · +${t.reward}` : ''}`))
+  const sec = (title) => {
+    const w = el('div', 'c-sec')
+    w.append(el('div', 'c-sec-h', title))
+    return w
+  }
+  const kv = (...nodes) => {
+    const d = el('div', 'c-kv')
+    for (const n of nodes) if (n != null) d.append(n)
+    return d
   }
 
+  // 左：积分包按名称聚合（同一个包重复出现很多行会很乱）
+  const left = el('div', 'c-col')
+  const groups = new Map()
+  for (const p of a.packages || []) {
+    const k = p.name || '积分包'
+    const g = groups.get(k) || { name: k, balance: 0, count: 0, runsOutAt: 0 }
+    g.balance += Number(p.balance) || 0
+    g.count++
+    const t = Number(p.runsOutAt) || 0
+    if (t && (!g.runsOutAt || t < g.runsOutAt)) g.runsOutAt = t
+    groups.set(k, g)
+  }
+  const list = [...groups.values()].sort((x, y) => (x.runsOutAt || Infinity) - (y.runsOutAt || Infinity))
+  const overview = sec('积分概览')
+  overview.append(kv(el('span', null, `${num(a.balance)} / ${num(a.size)} 可用`)))
+  const meter = el('div', 'c-meter')
+  const fill = el('span')
+  const pct = Number(a.size) > 0 ? Math.max(2, Math.min(100, (Number(a.balance) / Number(a.size)) * 100)) : 2
+  fill.style.width = `${pct}%`
+  meter.append(fill)
+  overview.append(meter)
+  left.append(overview)
+
+  const pk = sec(`积分包 · 共 ${a.packagesTotal ?? 0} 个`)
+  if ((a.packagesTotal ?? 0) > (a.packages?.length ?? 0)) pk.append(el('div', 'c-pkg-sub', `已载入最近到期的 ${a.packages.length} 个`))
+  if (list.length) {
+    for (const g of list.slice(0, 4)) {
+      const box = el('div', 'c-pkg-group')
+      const top = el('div', 'c-pkg-top')
+      top.append(el('span', 'c-pkg-name', g.name), el('span', 'c-pkg-amt', `${num(g.balance)} 积分`))
+      box.append(top, el('div', 'c-pkg-sub', `${g.count} 个包${g.runsOutAt ? ` · 最近 ${md(g.runsOutAt)} 到期` : ' · 长期有效'}`))
+      pk.append(box)
+    }
+    if (list.length > 4) pk.append(el('div', 'c-pkg-sub', `另有 ${list.length - 4} 类积分包`))
+  } else pk.append(el('p', 'muted', '没有可用的积分包'))
+  left.append(pk)
+
+  // 右：签到 / 成长 / 旅行 / 最近动作
+  const right = el('div', 'c-col')
+  const ci = (V?.checkin?.accounts || []).find((x) => (a.uid && x.uid === a.uid) || (a.label && x.accountId === a.label))
+  const ck = sec('每日签到')
+  ck.append(kv(el('span', `pill ${ci && (ci.outcome === 'done' || ci.outcome === 'claimed') ? 'ok' : 'warn'}`, ci ? outcomeText(ci.outcome) : checkedToday(a) ? '已签到' : '未签到'), el('span', 'c-muted', ci?.at ? md(ci.at) : '')))
+  right.append(ck)
+
+  const ts = a.taskStats
+  const gr = sec('成长')
+  gr.append(kv(el('span', null, ts ? `任务 ${ts.done}/${ts.total}` : a.tasksError ? '读取失败' : '暂无任务快照'), el('span', 'c-muted', ts ? `进行中 ${ts.active} · 待接取 ${ts.notAccepted}` : '')))
+  for (const t of (a.tasks || []).filter((x) => !(x.target > 0 && x.current >= x.target)).slice(0, 3)) {
+    const row = el('div', 'c-task-row')
+    row.append(el('span', 'c-task-name', t.title), el('span', 'c-task-meta', `${t.current}/${t.target}${t.reward ? ` · +${t.reward}` : ''}`))
+    gr.append(row)
+  }
+  right.append(gr)
+
   const tv = (V?.travel?.accounts || []).find((x) => a.label && x.accountId === a.label)
-  right.append(el('div', 'c-detail-h', '猫猫旅行'))
-  right.append(el('div', 'c-detail-line', tv ? `${tv.label || '—'}${tv.last?.message ? ` · ${tv.last.message}` : ''}` : '—'))
+  const tr = sec('猫猫旅行')
+  tr.append(kv(el('span', null, tv?.label || '—'), el('span', 'c-muted', tv?.last?.message || '')))
+  right.append(tr)
 
   const la = a.lastAction && !(a.lastAction.action === 'checkin' && checkedToday(a)) ? a.lastAction : null
   if (la) {
-    right.append(el('div', 'c-detail-h', '最近动作'))
-    right.append(el('div', 'c-detail-line', `${actionZh(la.action)}${la.ok ? '成功' : '失败'} · ${la.message || ''} · ${md(la.at)}`))
+    const ac = sec('最近动作')
+    ac.append(kv(el('span', `pill ${la.ok ? 'ok' : 'warn'}`, `${actionZh(la.action)}${la.ok ? '成功' : '失败'}`), el('span', 'c-muted', `${la.message || ''}${la.at ? ` · ${md(la.at)}` : ''}`)))
+    right.append(ac)
   }
 
   grid.append(left, right)
