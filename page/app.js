@@ -129,7 +129,7 @@ async function triggerAction(a, action) {
   try {
     const opts = (await magpie.options.get()) || {}
     await magpie.options.set({ ...opts, pendingAction: { at: Date.now(), uid: a.key || a.uid, action } })
-    setTimeout(() => { try { location.reload() } catch {} }, action === 'growth' ? 8000 : 3500)
+    setTimeout(() => { try { location.reload() } catch {} }, 10000)
   } catch {}
 }
 
@@ -168,12 +168,15 @@ function accountCard(a) {
     if (action === 'checkin') return checkedToday(a)
     if (action === 'travel') {
       const tv = (V?.travel?.accounts || []).find((x) => a.label && x.accountId === a.label)
-      return !!(tv && tv.state === 'traveling')
+      const isTraveling = !!(tv && tv.state === 'traveling')
+      const la = a.lastAction
+      return isTraveling || (la && la.action === 'travel' && la.ok)
     }
     if (action === 'growth') {
-      const allDone = (a.taskStats && a.taskStats.done === a.taskStats.total && a.taskStats.notAccepted === 0)
+      const ts = a.taskStats
+      const allDone = !!(ts && ts.done === ts.total && ts.notAccepted === 0)
       const la = a.lastAction
-      return !!(allDone || (la && la.action === 'growth' && la.ok))
+      return allDone || (la && la.action === 'growth' && la.ok)
     }
     return false
   }
@@ -255,9 +258,10 @@ function compactRow(a, initialOpen = false) {
       return !!(tv && tv.state === 'traveling')
     }
     if (action === 'growth') {
-      const allDone = (a.taskStats && a.taskStats.done === a.taskStats.total && a.taskStats.notAccepted === 0)
+      const ts2 = a.taskStats
+      const allDone = !!(ts2 && ts2.done === ts2.total && ts2.notAccepted === 0)
       const la = a.lastAction
-      return !!(allDone || (la && la.action === 'growth' && la.ok))
+      return allDone || (la && la.action === 'growth' && la.ok)
     }
     return false
   }
