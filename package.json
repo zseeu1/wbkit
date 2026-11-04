@@ -50,7 +50,9 @@
       "autoTravel": false,
       "travelEveryMin": 30,
       "density": "card",
-      "refreshAt": 0
+      "refreshAt": 0,
+      "autoTasks": false,
+      "taskAt": "09:10"
     }
   },
   "repository": {

@@ -40,6 +40,35 @@
   wrap.innerHTML = today + reminders
   document.body.appendChild(wrap)
 
+  // 成长任务每日自动：面板可直接开关/改时间（写 options，宿主重载后生效）
+  const auto = V.panel || {}
+  const autoEl = document.createElement('div')
+  autoEl.style.cssText = 'flex:1 1 220px;min-width:200px;border:1px solid #e6eeeb;border-radius:14px;padding:12px 14px;background:#fff'
+  autoEl.innerHTML = `<div style="font-size:12px;color:#6b8a81;font-weight:600">成长任务每日自动</div>
+    <div style="margin-top:8px;font-size:13px;color:#123f35;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" data-a-auto ${auto.autoTasks ? 'checked' : ''}/> 开启</label>
+      <span>每天</span><input type="time" data-a-at value="${String(auto.taskAt || '09:10')}" style="border:1px solid #cfe0db;border-radius:8px;padding:3px 8px"/>
+      <span style="color:#8aa39b">北京时间</span>
+    </div>
+    <div style="margin-top:4px;font-size:11px;color:#8aa39b">到点自动对所有国内个人账号跑一轮成长任务（一天一次）</div>`
+  wrap.appendChild(autoEl)
+  const autoCb = autoEl.querySelector('[data-a-auto]')
+  const autoAt = autoEl.querySelector('[data-a-at]')
+  let saving = false
+  const saveAuto = async () => {
+    if (saving) return
+    saving = true
+    try {
+      if (mp?.options?.get && mp?.options?.set) {
+        const cur = (await mp.options.get()) || {}
+        await mp.options.set({ ...cur, autoTasks: !!autoCb.checked, taskAt: autoAt.value || '09:10' })
+      }
+    } catch {}
+    saving = false
+  }
+  autoCb?.addEventListener('change', saveAuto)
+  autoAt?.addEventListener('change', saveAuto)
+
   // 任务进度（快照里带了 taskStats/tasks 才显示）
   const withTasks = (V.accounts || []).filter((a) => a.taskStats && a.taskStats.total > 0)
   if (withTasks.length) {

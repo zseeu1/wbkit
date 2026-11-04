@@ -14,6 +14,7 @@ import { writeView } from './lib/view.mjs'
 import { maybeCheckin, consumePending } from './lib/schedule.mjs'
 import { maybeTravel, consumePendingTravel } from './lib/pet.mjs'
 import { consumePendingImport, consumePendingExport } from './lib/transfer.mjs'
+import { consumePendingAction, runAutoTasks } from './lib/actions.mjs'
 
 const log = (...a) => console.log('[wbkit]', ...a)
 
@@ -114,6 +115,14 @@ export const WorkBuddyKit = async (input, options) => {
   await adoptTick(input)
   await transferTick(opts)
   const backgroundInit = async () => {
+    try {
+      const act = await consumePendingAction(opts)
+      if (act?.pending) log(`action(${act.action}): ${act.result?.message ?? act.result?.ok}`)
+    } catch (e) { log('action failed:', e?.message ?? e) }
+    try {
+      const auto = await runAutoTasks(opts)
+      if (auto?.ran) log(`autoTasks: ${auto.results.map((r) => `${r.nickname}=${r.ok ? '+' + r.credit : 'fail'}`).join(' ')}`)
+    } catch (e) { log('autoTasks failed:', e?.message ?? e) }
     await checkinTick(opts, 'load')
     await travelTick(opts, 'load')
     await refreshPage(opts)
@@ -132,4 +141,4 @@ export const WorkBuddyKit = async (input, options) => {
 }
 
 // 给测试和 CLI 用；不是插件函数，magpie 不会调用它。
-export const _internal = { refreshPage, checkinTick, travelTick, transferTick, adoptTick }
+export const _internal = { refreshPage, checkinTick, travelTick, transferTick, adoptTick, consumePendingAction, runAutoTasks }

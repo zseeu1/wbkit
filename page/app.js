@@ -104,6 +104,14 @@ function packageRow(p) {
   return row
 }
 
+async function triggerAction(a, action) {
+  try {
+    const opts = (await magpie.options.get()) || {}
+    await magpie.options.set({ ...opts, pendingAction: { at: Date.now(), uid: a.key || a.uid, action } })
+    setTimeout(() => { try { location.reload() } catch {} }, 3500)
+  } catch {}
+}
+
 function accountCard(a) {
   const card = el('article', 'card')
   const head = el('div', 'card-top')
@@ -134,7 +142,20 @@ function accountCard(a) {
   tokenLine.append(el('span', null, `登录态 ${md(a.expiresAt)}`))
   if (d != null) tokenLine.append(el('span', `pill ${d <= 7 ? 'warn' : ''}`, `${d} 天`))
 
-  card.append(head, hero, el('div', 'sect-label', '近期作废'), packList, tokenLine)
+  const acts = el('div', 'card-actions')
+  acts.style.cssText = 'display:flex;gap:8px;margin-top:10px;flex-wrap:wrap'
+  for (const [action, label] of [['checkin', '签到'], ['travel', '旅行'], ['growth', '成长']]) {
+    const btn = el('button', 'btn ghost', label)
+    btn.type = 'button'
+    btn.style.cssText = 'font-size:12px;padding:5px 12px;border-radius:8px'
+    btn.onclick = () => {
+      btn.disabled = true
+      btn.textContent = '已提交'
+      triggerAction(a, action)
+    }
+    acts.append(btn)
+  }
+  card.append(head, hero, el('div', 'sect-label', '近期作废'), packList, tokenLine, acts)
   return card
 }
 
