@@ -47,6 +47,36 @@
   wrap.innerHTML = sched + today + reminders
   ov.insertAdjacentElement('afterend', wrap)
 
+  // 任务进度（快照里带了 taskStats/tasks 才显示）
+  const withTasks = (V.accounts || []).filter((a) => a.taskStats && a.taskStats.total > 0)
+  if (withTasks.length) {
+    const rows = withTasks.map((a) => {
+      const st = a.taskStats
+      const open = (a.tasks || [])
+        .filter((t) => !(t.target > 0 && t.current >= t.target) && !t.manual)
+        .slice(0, 4)
+        .map((t) => `${esc(t.title)}（${esc(t.current)}/${esc(t.target)}${t.reward ? `，+${esc(t.reward)}` : ''}）`)
+        .join('；')
+      return `<tr>
+        <td style="padding:5px 8px;white-space:nowrap">${esc(a.label)}</td>
+        <td style="padding:5px 8px;color:#0f9c78">${esc(st.done)}/${esc(st.total)}</td>
+        <td style="padding:5px 8px;color:#8a7b3a">${esc(st.active)}</td>
+        <td style="padding:5px 8px;color:#8a7b3a">${esc(st.notAccepted)}</td>
+        <td style="padding:5px 8px;color:#5b7a72">${open || (a.tasksError ? esc(a.tasksError) : '—')}</td>
+      </tr>`
+    }).join('')
+    const sec = document.createElement('section')
+    sec.style.cssText = 'margin:18px 0 4px'
+    sec.innerHTML = `<h2 style="font-size:14px;color:#123f35;margin:0 0 6px">任务进度</h2>
+      <div style="overflow:auto;border:1px solid #e6eeeb;border-radius:12px">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr style="background:#f3fbf8;color:#6b8a81;text-align:left">
+          <th style="padding:6px 8px">账号</th><th style="padding:6px 8px">已完成</th>
+          <th style="padding:6px 8px">进行中</th><th style="padding:6px 8px">待接取</th><th style="padding:6px 8px">未完成</th>
+        </tr></thead><tbody>${rows}</tbody></table></div>`
+    wrap.insertAdjacentElement('afterend', sec)
+  }
+
   // 最近执行历史：放在页面最后（footer 之前），没有就不占地方
   if (h.length) {
     const sec = document.createElement('section')

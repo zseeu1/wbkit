@@ -20,15 +20,13 @@ test('WorkBuddyKit 合并后工具面 = pool/growth/usage/tasks/models，快照�
     const { WorkBuddyKit } = await import('../../index.mjs')
     const plugin = await WorkBuddyKit({ client: null }, { service: 'off' })
     const names = Object.keys(plugin.tool).sort()
-    assert.deepEqual(names, ['growth', 'models', 'pool', 'tasks', 'usage'])
+    assert.deepEqual(names, ['growth', 'models', 'pool', 'usage'])
     assert.equal(typeof plugin['chat.headers'], 'function')
     const dataFile = join(process.cwd(), 'page', 'data.js')
     if (existsSync(dataFile)) {
       const text = readFileSync(dataFile, 'utf8')
       assert.ok(!text.includes('SECRET_ACCESS_MARKER'), '页面快照不能包含 access token')
     }
-    // service=off 不应拉起守护进程：没有 daemon.json
-    assert.equal(existsSync(join(cfg, 'wbkit-tasks', 'state', 'daemon.json')), false)
   } finally {
     process.env.HOME = oldHome
     delete process.env.WBKIT_LOAD_SYNC

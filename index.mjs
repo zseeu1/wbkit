@@ -1,117 +1,21 @@
-// wbkit — WorkBuddy 一体化补位插件。
+// wbkit — WorkBuddy 一体化补位插件（无本地服务版）。
 //
-// 保留原有：账号池导入/导出/adopt、账号页、每日签到（让路给原生）、猫猫旅行、
-// 官方用量。供应商与登录不在这里，交给社区插件
-// @magpie-community/opencode-workbuddy-auth（workbuddy / workbuddy-ai 两个 provider）。
+// 0.5.0 起去掉常驻本地服务/任务看板：所有能力都在插件进程内完成，面板数据靠
+// 加载时写的一份快照（page/data.js），面板「刷新」按钮重生成快照。
 //
-// 0.4.0 并入：
-//   - jichie/magpie-workbuddy-tasks 的批量任务引擎（lib/engine）与本地服务（service/）：
-//     接取→点亮→轮询进度→达标领奖、任务级勾选、夜猫子、每日活跃、积分明细、风控冷却。
-//   - sabercomo/magpie-workbuddy-plus 的模型目录/套餐视图（lib/models）。
+// 供应商与登录不在这里，交给社区插件 @magpie-community/opencode-workbuddy-auth
+// （workbuddy / workbuddy-ai 两个 provider）。
 //
-// 服务默认「懒启动」：插件加载不起进程；调用 wbkit_tasks / wbkit_models 或从页面
-// 打开看板时才拉起，空闲 30 分钟自动退出。选项 service = lazy(默认) | on | off。
-//
-// 注意：入口导出的每个函数都会被 magpie 当作一个插件调用，所以这里只导出一个插件
-// 函数，其余一律挂在 _internal 上。
-import { readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+// 入口导出的每个函数都会被 magpie 当作一个插件调用，所以这里只导出一个插件函数，
+// 其余一律挂在 _internal 上。
 import { makeTools } from './lib/tools.mjs'
-import { makeServiceTools } from './lib/service-tools.mjs'
 import { adoptOrphans } from './lib/adopt.mjs'
 import { writeView } from './lib/view.mjs'
 import { maybeCheckin, consumePending } from './lib/schedule.mjs'
 import { maybeTravel, consumePendingTravel } from './lib/pet.mjs'
 import { consumePendingImport, consumePendingExport } from './lib/transfer.mjs'
-import {
-  ensureDaemon,
-  pidAlive,
-  readDaemonInfo,
-  resolveCfgDir,
-  shutdownDaemon,
-  stateDirFor,
-  writeControl,
-} from './service/lifecycle.mjs'
 
 const log = (...a) => console.log('[wbkit]', ...a)
-const hereDir = () => dirname(fileURLToPath(import.meta.url))
-const serviceDir = () => join(hereDir(), 'service')
-
-// ---- 本地服务生命周期（默认懒启动） --------------------------------------
-
-let idleTimer = null
-
-function serviceMode(opts) {
-  const m = String(opts?.service ?? 'lazy')
-  return m === 'on' || m === 'off' ? m : 'lazy'
-}
-
-function daemonInfoNow() {
-  try {
-    return readDaemonInfo(stateDirFor(resolveCfgDir()))
-  } catch {
-    return null
-  }
-}
-
-function serviceRunning() {
-  const info = daemonInfoNow()
-  return !!info && !!info.port && pidAlive(info.pid)
-}
-
-function scheduleIdle() {
-  if (idleTimer) clearTimeout(idleTimer)
-  idleTimer = setTimeout(async () => {
-    const info = daemonInfoNow()
-    if (info) await shutdownDaemon(info).catch(() => {})
-  }, 30 * 60_000)
-  idleTimer.unref?.()
-}
-
-// 按需拉起服务：off 直接拒绝；lazy/on 都确保守护进程就绪；lazy 额外装空闲退出计时。
-async function ensureService(opts) {
-  const mode = serviceMode(opts)
-  if (mode === 'off') {
-    const e = new Error('后台服务已关闭（把插件选项 service 设为 lazy 或 on 后重试）')
-    e.code = 'WBKIT_SERVICE_OFF'
-    throw e
-  }
-  const cfgDir = resolveCfgDir()
-  writeControl(stateDirFor(cfgDir), 'on')
-  // 页面反代的端口写死在 package.json 的 magpie.page.service.port，服务必须绑同一个；
-  // 选项 servicePort 可覆盖（两边要一致）。否则 magpie 反代到 4390、服务在 4391，看板打不开。
-  let desiredPort = Number(opts?.servicePort) > 0 ? Number(opts.servicePort) : 0
-  if (!desiredPort) {
-    try {
-      const pkg = JSON.parse(readFileSync(join(hereDir(), 'package.json'), 'utf8'))
-      const p = Number(pkg?.magpie?.page?.service?.port)
-      if (p > 0) desiredPort = p
-    } catch {}
-  }
-  const r = await ensureDaemon({ cfgDir, pluginDir: serviceDir(), log, port: desiredPort })
-  if (mode === 'lazy') scheduleIdle()
-  return r
-}
-
-// 插件加载时按选项决定服务动作：on=立即起；off=停掉；lazy=什么都不做。
-async function serviceTick(opts) {
-  const mode = serviceMode(opts)
-  try {
-    if (mode === 'on') {
-      const r = await ensureService(opts)
-      if (r?.info) log(`service: ${r.info.host ?? '127.0.0.1'}:${r.info.port}${r.spawned ? '（已拉起）' : '（复用）'}`)
-      else if (r?.error) log('service:', r.error)
-    } else if (mode === 'off') {
-      const cfgDir = resolveCfgDir()
-      writeControl(stateDirFor(cfgDir), 'off')
-      const info = daemonInfoNow()
-      if (info) await shutdownDaemon(info)
-    }
-  } catch (e) {
-    log('service tick failed:', e?.message ?? e)
-  }
-}
 
 // ---- 页面快照 -------------------------------------------------------------
 
@@ -143,8 +47,6 @@ async function checkinTick(options, why) {
 }
 
 async function travelTick(options, why) {
-  // 服务在跑时旅行交给引擎的北京时间窗口（09/21），这里的间隔推进让路，避免同账号重复旅行。
-  if (serviceRunning()) return { skipped: 'service' }
   try {
     const pending = await consumePendingTravel(options)
     if (pending.pending) {
@@ -207,28 +109,20 @@ async function transferTick(options) {
 
 export const WorkBuddyKit = async (input, options) => {
   const opts = options ?? {}
-  // adopt / transfer 很快（只读本地文件），先做完保证账号键正确；
-  // 其余是慢活（签到/旅行/逐账号查余额快照/起服务），丢后台跑，
-  // 否则账号一多就会超过 magpie 给插件的 20 秒加载上限被判 failed（issue #6）。
+  // adopt / transfer 只读本地文件，很快；签到/旅行/快照是慢活（快照会查余额、可选拉任务），
+  // 丢后台跑，避免账号多时超过 magpie 给插件的 20 秒加载上限。
   await adoptTick(input)
   await transferTick(opts)
   const backgroundInit = async () => {
     await checkinTick(opts, 'load')
     await travelTick(opts, 'load')
     await refreshPage(opts)
-    await serviceTick(opts)
   }
-  if (process.env.WBKIT_LOAD_SYNC === '1') {
-    await backgroundInit()
-  } else {
-    Promise.resolve().then(backgroundInit).catch((e) => log('background init failed:', e?.message ?? e))
-  }
+  if (process.env.WBKIT_LOAD_SYNC === '1') await backgroundInit()
+  else Promise.resolve().then(backgroundInit).catch((e) => log('background init failed:', e?.message ?? e))
 
   return {
-    tool: {
-      ...makeTools(input?.client),
-      ...makeServiceTools({ ensure: () => ensureService(opts), log }),
-    },
+    tool: makeTools(input?.client),
     // 每次走 WorkBuddy 的请求都顺带看一眼（内部 5 分钟一次 + 各自节流）
     'chat.headers': async (input) => {
       if (input?.model?.providerID === 'workbuddy') tickLater(opts, 'chat')
@@ -238,13 +132,4 @@ export const WorkBuddyKit = async (input, options) => {
 }
 
 // 给测试和 CLI 用；不是插件函数，magpie 不会调用它。
-export const _internal = {
-  refreshPage,
-  checkinTick,
-  travelTick,
-  transferTick,
-  adoptTick,
-  serviceTick,
-  ensureService,
-  serviceRunning,
-}
+export const _internal = { refreshPage, checkinTick, travelTick, transferTick, adoptTick }
