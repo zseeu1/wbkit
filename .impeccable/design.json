@@ -1,0 +1,285 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-04T06:42:35.094690Z",
+  "title": "Design System: wbkit",
+  "extensions": {
+    "colorMeta": {
+      "buddy-teal": {
+        "role": "primary",
+        "displayName": "Buddy Teal",
+        "canonical": "#00c0a0",
+        "tonalRamp": [
+          "#04261f",
+          "#074437",
+          "#0a6352",
+          "#0d826a",
+          "#00a086",
+          "#00c0a0",
+          "#3fd6ba",
+          "#8ae8d7"
+        ]
+      },
+      "buddy-teal-strong": {
+        "role": "primary",
+        "displayName": "Buddy Teal Strong",
+        "canonical": "#0a8f78",
+        "tonalRamp": [
+          "#04261f",
+          "#064136",
+          "#075b4b",
+          "#087561",
+          "#0a8f78",
+          "#12a88d",
+          "#4fc2ab",
+          "#93ddcd"
+        ]
+      },
+      "signal-green": {
+        "role": "secondary",
+        "displayName": "Signal Green",
+        "canonical": "#14b877",
+        "tonalRamp": [
+          "#04241a",
+          "#07452f",
+          "#0a6744",
+          "#0d8a59",
+          "#10a86d",
+          "#14b877",
+          "#4fd39b",
+          "#93e8c4"
+        ]
+      },
+      "alert-amber": {
+        "role": "tertiary",
+        "displayName": "Alert Amber",
+        "canonical": "#e8912f",
+        "tonalRamp": [
+          "#2a1704",
+          "#4d2b08",
+          "#70400c",
+          "#935511",
+          "#b66b16",
+          "#e8912f",
+          "#f5b56a",
+          "#fbd6a8"
+        ]
+      },
+      "canvas-dark": {
+        "role": "neutral",
+        "displayName": "Console Black",
+        "canonical": "#101012",
+        "tonalRamp": [
+          "#0a0a0b",
+          "#101012",
+          "#161618",
+          "#1d1d20",
+          "#252528",
+          "#333336",
+          "#5a5a5f",
+          "#a8a8ae"
+        ]
+      },
+      "canvas-light": {
+        "role": "neutral",
+        "displayName": "Paper White",
+        "canonical": "#f7f9f8",
+        "tonalRamp": [
+          "#c9d0cd",
+          "#dde3e1",
+          "#e7ecea",
+          "#eff3f1",
+          "#f4f7f6",
+          "#f7f9f8",
+          "#fbfcfc",
+          "#ffffff"
+        ]
+      },
+      "ink-dark": {
+        "role": "neutral",
+        "displayName": "Ink Dark",
+        "canonical": "#ececee",
+        "tonalRamp": [
+          "#c9c9cc",
+          "#d6d6d9",
+          "#e0e0e2",
+          "#e6e6e8",
+          "#ececee",
+          "#f1f1f2",
+          "#f6f6f7",
+          "#fbfbfc"
+        ]
+      },
+      "ink-light": {
+        "role": "neutral",
+        "displayName": "Ink Light",
+        "canonical": "#1b2320",
+        "tonalRamp": [
+          "#0e1311",
+          "#151b18",
+          "#1b2320",
+          "#2a3330",
+          "#3f4a46",
+          "#5c6863",
+          "#8b9691",
+          "#c3cbc7"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "账号卡余额数字，页面最大字。"
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "页面标题。"
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "账号名与分区标题。"
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "说明与行内文本。"
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "徽标、小标题、时间戳。"
+      }
+    },
+    "shadows": [
+      {
+        "name": "seg-active",
+        "value": "0 1px 2px rgba(0, 0, 0, 0.14)",
+        "purpose": "分段控件选中项的落地感。"
+      },
+      {
+        "name": "hover-lift",
+        "value": "0 6px 18px rgba(0,0,0,0.18)",
+        "purpose": "仅卡片/主按钮 hover 可用，默认不显示。"
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-standard",
+        "value": "ease",
+        "purpose": "按钮/输入等状态过渡（0.15s）。"
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "card-stack",
+        "value": "700px"
+      },
+      {
+        "name": "compact-wrap",
+        "value": "760px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-default",
+      "description": "浅青绿填充的主操作按钮（签到/立即执行）。",
+      "html": "<button class=\"ds-btn\">立即签到</button>",
+      "css": ".ds-btn{font:-apple-system 12px/1.4;appearance:none;font-size:12px;padding:5px 12px;border-radius:9px;border:1px solid color-mix(in srgb, var(--accent,#00c0a0) 45%, transparent);background:color-mix(in srgb, var(--accent,#00c0a0) 12%, transparent);color:color-mix(in srgb, var(--accent,#00c0a0) 90%, var(--fg,#ececee));cursor:pointer;transition:background .15s ease, transform .15s ease}.ds-btn:hover{background:color-mix(in srgb, var(--accent,#00c0a0) 22%, transparent);transform:translateY(-1px)}.ds-btn:focus-visible{outline:2px solid color-mix(in srgb, var(--accent,#00c0a0) 60%, transparent);outline-offset:2px}.ds-btn:disabled{opacity:.55;cursor:default}"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "次级/工具按钮（刷新、导入导出、单账号动作）。",
+      "html": "<button class=\"ds-btn-ghost\">刷新</button>",
+      "css": ".ds-btn-ghost{appearance:none;font-size:12px;padding:5px 12px;border-radius:9px;border:1px solid var(--line, rgba(236,236,238,.12));background:transparent;color:var(--muted, rgba(236,236,238,.55));cursor:pointer;transition:background .15s ease,color .15s ease}.ds-btn-ghost:hover{color:var(--fg,#ececee);background:var(--surface-2, rgba(236,236,238,.08))}.ds-btn-ghost:focus-visible{outline:2px solid color-mix(in srgb, var(--accent,#00c0a0) 60%, transparent);outline-offset:2px}"
+    },
+    {
+      "name": "Account Card",
+      "kind": "card",
+      "refersTo": "account-card",
+      "description": "账号卡片：头像、名称、余额、积分包进度。",
+      "html": "<article class=\"ds-card\"><div class=\"ds-card-top\"><div class=\"ds-avatar\">小</div><div><strong>小祖</strong><div class=\"ds-sub\">大陆 · www.workbuddy.cn</div></div><span class=\"ds-pill ok\">可用</span></div><div class=\"ds-bal\">5330.49<span class=\"ds-bal-k\">67 个积分包</span></div></article>",
+      "css": ".ds-card{border:1px solid var(--line, rgba(236,236,238,.12));border-radius:16px;background:var(--surface, rgba(236,236,238,.04));padding:16px;color:var(--fg,#ececee);transition:border-color .15s ease, transform .15s ease}.ds-card:hover{border-color:color-mix(in srgb, var(--accent,#00c0a0) 35%, transparent);transform:translateY(-1px)}.ds-card-top{display:flex;align-items:center;gap:10px}.ds-avatar{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:color-mix(in srgb, var(--accent,#00c0a0) 16%, transparent);color:var(--accent,#00c0a0);font-weight:650}.ds-sub{font-size:11.5px;color:var(--muted, rgba(236,236,238,.55))}.ds-bal{font-size:30px;font-weight:700;letter-spacing:-.6px;margin-top:14px}.ds-bal-k{font-size:12px;font-weight:400;color:var(--muted, rgba(236,236,238,.55));margin-left:8px}"
+    },
+    {
+      "name": "Status Pill",
+      "kind": "chip",
+      "refersTo": "status-pill",
+      "description": "可用/待实测/到期等状态徽标，胶囊透明底。",
+      "html": "<span class=\"ds-pill ok\">可用</span> <span class=\"ds-pill warn\">待实测</span>",
+      "css": ".ds-pill{display:inline-flex;align-items:center;padding:2px 9px;border-radius:999px;border:1px solid var(--line, rgba(236,236,238,.12));background:transparent;font-size:11px;line-height:1.6;color:var(--muted, rgba(236,236,238,.55))}.ds-pill.ok{color:var(--green,#14b877);border-color:color-mix(in srgb, var(--green,#14b877) 40%, transparent)}.ds-pill.warn{color:var(--orange,#e8912f);border-color:color-mix(in srgb, var(--orange,#e8912f) 42%, transparent)}"
+    },
+    {
+      "name": "Segmented Control",
+      "kind": "nav",
+      "refersTo": "seg",
+      "description": "分区/密度切换的分段控件。",
+      "html": "<div class=\"ds-seg\"><button class=\"ds-seg-btn on\">全部</button><button class=\"ds-seg-btn\">国内版</button><button class=\"ds-seg-btn\">国际版</button></div>",
+      "css": ".ds-seg{display:inline-flex;gap:2px;padding:3px;border-radius:999px;background:var(--surface-2, rgba(236,236,238,.08));border:1px solid var(--line, rgba(236,236,238,.12))}.ds-seg-btn{appearance:none;border:0;background:transparent;border-radius:999px;padding:4px 12px;font-size:12.5px;color:var(--muted, rgba(236,236,238,.55));cursor:pointer}.ds-seg-btn.on{background:var(--bg,#101012);color:var(--fg,#ececee);box-shadow:0 1px 2px rgba(0,0,0,.14)}"
+    },
+    {
+      "name": "Time Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "签到/自动任务的时间输入框。",
+      "html": "<input class=\"ds-input\" type=\"time\" value=\"09:10\"/>",
+      "css": ".ds-input{font:inherit;font-size:12px;color:var(--fg,#ececee);background:var(--bg,#101012);border:1px solid var(--line, rgba(236,236,238,.12));border-radius:8px;padding:3px 7px}.ds-input:focus-visible{outline:none;border-color:color-mix(in srgb, var(--accent,#00c0a0) 45%, transparent)}"
+    },
+    {
+      "name": "Control Panel",
+      "kind": "card",
+      "refersTo": "control",
+      "description": "签到/旅行/导入导出的横向控制区。",
+      "html": "<section class=\"ds-control\"><div><div class=\"ds-ctl-title\">每日签到</div><div class=\"ds-ctl-sub\">打开后按设置的时间每天签一次</div></div><button class=\"ds-btn\">立即签到</button></section>",
+      "css": ".ds-control{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:14px 16px;border:1px solid var(--line, rgba(236,236,238,.12));border-radius:16px;background:var(--surface, rgba(236,236,238,.04));color:var(--fg,#ececee)}.ds-ctl-title{font-size:13px;font-weight:600}.ds-ctl-sub{font-size:11.5px;color:var(--muted, rgba(236,236,238,.55));margin-top:2px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "WorkBuddy Greenhouse",
+    "overview": "wbkit 是深色工作台里的一块温室：底色近黑、结构安静，青绿像温室里的指示灯，不只报状态，也参与品牌点缀。它服从 magpie 宿主主题，深色/浅色共用一套青绿；轻边框、低饱和表面、16px 大圆角，阴影近乎为零。",
+    "keyCharacteristics": [
+      "近黑画布 + 青绿唯一彩度：绿色既报状态，也做轻品牌",
+      "一切中性色由宿主主题变量派生，深浅主题自动适配",
+      "轻边框、低饱和表面、16px 大圆角；阴影近乎为零",
+      "高信息密度：卡片/紧凑两种密度，数字与对齐优先",
+      "令牌绝不进页面；视觉克制但不冷漠"
+    ],
+    "rules": [
+      {
+        "name": "The Theme Pair Rule",
+        "body": "中性色永远从宿主 --magpie-fg/--magpie-bg 派生；深色浅色共用一套青绿。禁止新增一套硬编码灰阶。",
+        "section": "colors"
+      },
+      {
+        "name": "The Green Means Something Rule",
+        "body": "青绿可以点缀品牌，但可用/正常必须是 Signal Green、需要注意必须是 Alert Amber；颜色不能只当装饰。",
+        "section": "colors"
+      },
+      {
+        "name": "The One Face Rule",
+        "body": "只有系统无衬线 + 技术性 mono 两种；mono 不得拿来装技术感。",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-By-Default Rule",
+        "body": "静止表面永远是平的；阴影只回应状态（hover/选中），不装饰层级。",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do 让所有中性色从 --magpie-fg/--magpie-bg 派生，深浅主题自动成立。",
+      "Do 用青绿做状态和轻品牌点缀，但可用用 Signal Green、注意用 Alert Amber。",
+      "Do 默认扁平：靠 1px 边框 + 低饱和表面分层；阴影只回应 hover/选中。",
+      "Do 保持高信息密度：数字右对齐、等宽对齐、紧凑行可切。",
+      "Do 按钮/输入用小尺寸、明确边界，hover 只做轻微明暗或 1px 上浮。"
+    ],
+    "donts": [
+      "Don't 写死灰阶或只做深色——必须同时适配浅色主题。",
+      "Don't 用渐变文字、玻璃拟态、彩色光晕或硬偏移阴影。",
+      "Don't 在卡片/列表上加超过 1px 的左侧色条。",
+      "Don't 把绿色铺满大块背景；大面积只用近黑/纸白，青绿是信号不是底色。",
+      "Don't 把令牌、access/refresh 写进任何视觉快照或截图。"
+    ]
+  }
+}
