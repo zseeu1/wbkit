@@ -207,7 +207,7 @@ function paintDensity() {
 }
 
 // 紧凑模式：一行一个账号，账号多了也不占屏
-function compactRow(a) {
+function compactRow(a, initialOpen = false) {
   const row = el('div', 'crow')
   const who = el('div', 'c-who')
   who.append(el('span', 'avatar sm', String(a.label || '?').slice(0, 1)))
@@ -250,8 +250,56 @@ function compactRow(a) {
     acts.append(btn)
   }
 
+  const chev = el('button', 'c-chevron', '›')
+  chev.type = 'button'
+  chev.setAttribute('aria-label', '展开详情')
+  acts.append(chev)
+
+  const detail = el('div', 'c-detail')
+  const inner = el('div', 'c-detail-in')
+  const grid = el('div', 'c-detail-grid')
+  const left = el('div', 'c-col')
+  left.append(el('div', 'c-detail-h', `积分包 · ${a.packagesTotal ?? 0} 个`))
+  if (a.packages?.length) for (const p of a.packages) left.append(packageRow(p))
+  else left.append(el('p', 'muted', '没有可用的积分包'))
+  const right = el('div', 'c-col')
+  right.append(el('div', 'c-detail-h', '任务进度'))
+  const ts = a.taskStats
+  right.append(el('div', 'c-detail-line', ts ? `已完成 ${ts.done}/${ts.total} · 进行中 ${ts.active} · 待接取 ${ts.notAccepted}` : a.tasksError ? `读取失败：${a.tasksError}` : '暂无任务快照'))
+  right.append(el('div', 'c-detail-h', '登录态'))
+  const dd = days(a.expiresAt)
+  right.append(el('div', 'c-detail-line', `${a.expiresAt ? md(a.expiresAt) : '—'}${dd != null ? ` · ${dd} 天` : ''}`))
+  const la = a.lastAction && !(a.lastAction.action === 'checkin' && checkedToday(a)) ? a.lastAction : null
+  if (la) {
+    right.append(el('div', 'c-detail-h', '最近动作'))
+    right.append(el('div', 'c-detail-line', `${actionZh(la.action)}${la.ok ? '成功' : '失败'} · ${la.message || ''} · ${md(la.at)}`))
+  }
+  grid.append(left, right)
+  inner.append(grid)
+  detail.append(inner)
+  detail.setAttribute('aria-hidden', 'true')
+
+  let open = !!initialOpen
+  const apply = () => {
+    detail.classList.toggle('open', open)
+    detail.setAttribute('aria-hidden', String(!open))
+    row.setAttribute('aria-expanded', String(open))
+    chev.style.transform = open ? 'rotate(90deg)' : ''
+  }
+  row.addEventListener('click', (e) => {
+    if (e.target.closest('button')) return
+    open = !open
+    apply()
+  })
+  chev.addEventListener('click', (e) => {
+    e.stopPropagation()
+    open = !open
+    apply()
+  })
+  apply()
+
   row.append(who, bal, expiry, flags, acts)
-  return row
+  return [row, detail]
 }
 
 function paintAccounts() {
@@ -266,7 +314,14 @@ function paintAccounts() {
     host.append(empty)
     return
   }
-  for (const a of rows) host.append(density === 'compact' ? compactRow(a) : accountCard(a))
+  rows.forEach((a, i) => {
+    if (density === 'compact') {
+      const [r, d] = compactRow(a, i === 0)
+      host.append(r, d)
+    } else {
+      host.append(accountCard(a))
+    }
+  })
 }
 
 function paintControl() {
