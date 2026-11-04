@@ -567,3 +567,4 @@ body {
 .c-dot.warn { background: var(--orange); }
 .c-chevron { color: var(--muted); font-size: 18px; line-height: 1; cursor: pointer; transition: transform 0.26s cubic-bezier(0.2, 0.8, 0.2, 1); user-select: none; }
 .crow[aria-expanded="true"] .c-chevron { transform: rotate(90deg); }
+.c-detail-acts { display: flex; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }

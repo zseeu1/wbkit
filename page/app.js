@@ -324,15 +324,26 @@ function compactRow(a, initialOpen = false) {
 
   const ztv = (V?.travel?.accounts || []).find((x) => a.label && x.accountId === a.label)
   const tr = sec('猫猫旅行')
-  tr.append(kv(el('span', null, tv?.label || '—'), el('span', 'c-muted', tv?.last?.message || '')))
+  tr.append(kv(el('span', null, ztv?.label || '—'), el('span', 'c-muted', ztv?.last?.message || '')))
   right.append(tr)
 
 
 
+  // 动作按钮（展开时显示）
+  const detailActs = el('div', 'c-detail-acts')
+  for (const [action, label] of [['checkin', '签到'], ['travel', '旅行'], ['growth', '成长']]) {
+    const done = actionDone(action, a)
+    const btn = el('button', 'btn ghost', done ? (action === 'checkin' ? '已签到' : action === 'travel' ? '旅行中' : '已完成') : label)
+    btn.type = 'button'; btn.disabled = done; btn.style.cssText = 'font-size:11px;padding:4px 10px;border-radius:7px'
+    if (!done) btn.onclick = () => { btn.disabled = true; btn.textContent = '已提交'; triggerAction(a, action) }
+    detailActs.append(btn)
+  }
+  right.append(detailActs)
+
   grid.append(left, right)
   inner.append(grid)
   detail.append(inner)
-    detail.setAttribute('aria-hidden', 'true')
+  detail.setAttribute('aria-hidden', 'true')
 
   let open = !!initialOpen
   const apply = () => {
@@ -353,7 +364,6 @@ function compactRow(a, initialOpen = false) {
   })
   apply()
 
-  row.append(who, bal, expiry, flags, acts)
   return [row, detail]
 }
 
