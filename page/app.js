@@ -111,12 +111,18 @@ function actionZh(a) {
 // 今天是否已签到：已签到时不再显示「签到」按钮，避免和状态胶囊重复
 function checkedToday(a) {
   const c = a?.checkin
-  if (!c) return false
-  if (!(c.outcome === 'done' || c.outcome === 'claimed')) return false
-  const today = V?.checkin?.today
-  if (c.date) return c.date === today
-  if (c.at) return new Date(c.at).toDateString() === new Date().toDateString()
-  return true
+  if (c && (c.outcome === 'done' || c.outcome === 'claimed')) {
+    const today = V?.checkin?.today
+    if (c.date) { if (c.date === today) return true }
+    else if (c.at) { if (new Date(c.at).toDateString() === new Date().toDateString()) return true }
+    else return true
+  }
+  const la = a?.lastAction
+  if (la && la.action === 'checkin' && la.ok) {
+    const at = Number(la.at) || Date.parse(la.atIso || '')
+    if (Number.isFinite(at) && new Date(at).toDateString() === new Date().toDateString()) return true
+  }
+  return false
 }
 
 async function triggerAction(a, action) {
@@ -138,7 +144,6 @@ function accountCard(a) {
   who.append(names)
   const flags = el('div', 'flags')
   flags.append(el('span', `pill ${a.error || a.health === 'error' ? 'warn' : a.health === 'ok' ? 'ok' : 'warn'}`, a.error ? '登录异常' : a.health === 'ok' ? '可用' : a.healthNote || '待实测'))
-  if (a.checkin?.at) flags.append(el('span', `pill ${a.checkin.outcome === 'claimed' || a.checkin.outcome === 'done' ? 'ok' : 'warn'}`, outcomeText(a.checkin.outcome)))
   head.append(who, flags)
 
   const hero = el('div', 'balance')
@@ -160,11 +165,12 @@ function accountCard(a) {
   const acts = el('div', 'card-actions')
   acts.style.cssText = 'display:flex;gap:8px;margin-top:10px;flex-wrap:wrap'
   for (const [action, label] of [['checkin', '签到'], ['travel', '旅行'], ['growth', '成长']]) {
-    if (action === 'checkin' && checkedToday(a)) continue
-    const btn = el('button', 'btn ghost', label)
+    const done = action === 'checkin' && checkedToday(a)
+    const btn = el('button', 'btn ghost', done ? '已签到' : label)
     btn.type = 'button'
+    btn.disabled = done
     btn.style.cssText = 'font-size:12px;padding:5px 12px;border-radius:8px'
-    btn.onclick = () => {
+    if (!done) btn.onclick = () => {
       btn.disabled = true
       btn.textContent = '已提交'
       triggerAction(a, action)
@@ -222,7 +228,6 @@ function compactRow(a) {
 
   const flags = el('div', 'c-flags')
   flags.append(el('span', `pill ${a.error || a.health === 'error' ? 'warn' : a.health === 'ok' ? 'ok' : 'warn'}`, a.error ? '登录异常' : a.health === 'ok' ? '可用' : a.healthNote || '待实测'))
-  if (a.checkin?.at) flags.append(el('span', `pill ${a.checkin.outcome === 'claimed' || a.checkin.outcome === 'done' ? 'ok' : 'warn'}`, outcomeText(a.checkin.outcome)))
   if (a.lastAction) {
     const la = a.lastAction
     const p = el('span', `pill ${la.ok ? 'ok' : 'warn'}`, `${actionZh(la.action)}${la.ok ? '成功' : '失败'}`)
@@ -232,11 +237,12 @@ function compactRow(a) {
 
   const acts = el('div', 'c-acts')
   for (const [action, label] of [['checkin', '签到'], ['travel', '旅行'], ['growth', '成长']]) {
-    if (action === 'checkin' && checkedToday(a)) continue
-    const btn = el('button', 'btn ghost', label)
+    const done = action === 'checkin' && checkedToday(a)
+    const btn = el('button', 'btn ghost', done ? '已签到' : label)
     btn.type = 'button'
+    btn.disabled = done
     btn.style.cssText = 'font-size:11px;padding:3px 9px;border-radius:7px;white-space:nowrap'
-    btn.onclick = () => {
+    if (!done) btn.onclick = () => {
       btn.disabled = true
       btn.textContent = '已提交'
       triggerAction(a, action)
