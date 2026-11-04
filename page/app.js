@@ -287,7 +287,7 @@ function compactRow(a, initialOpen = false) {
   const gProgress = !!(tsDot && (tsDot.active > 0 || tsDot.done > 0))
   addDot(gDone ? 'ok' : gProgress ? 'warn' : '', gDone ? '成长完成' : tsDot ? `成长 ${tsDot.done}/${tsDot.total}` : '无成长任务')
   const tvDot = (V?.travel?.accounts || []).find((x) => a.label && x.accountId === a.label)
-  const travelCls = tvDot?.state === 'traveling' ? 'ok' : tvDot?.dailyLimitReached ? 'warn' : ''
+  const travelCls = tvDot?.state === 'traveling' ? 'ok' : tvDot?.dailyLimitReached ? 'ok' : ''
   addDot(travelCls, tvDot?.state === 'traveling' ? '旅行中' : tvDot?.dailyLimitReached ? '今日已达上限' : '可旅行')
 
   const chev = el('span', 'c-chevron')
