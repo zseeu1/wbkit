@@ -517,10 +517,15 @@ body {
   transition: grid-template-rows 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
   border-top: 1px solid transparent;
 }
-.c-detail.open { border-top-color: var(--line); }
+.c-detail.open { grid-template-rows: 1fr; border-top-color: var(--line); }
 .c-detail-in { overflow: hidden; min-height: 0; }
 .c-detail-grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 8px 28px; padding: 12px 16px 16px 56px; }
 .c-col { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .c-detail-h { font-size: 11px; letter-spacing: 0.06em; color: var(--muted); margin-top: 2px; }
 .c-detail-line { font-size: 12px; color: var(--fg); }
 @media (max-width: 760px) { .c-detail-grid { grid-template-columns: 1fr; padding-left: 16px; } }
+.c-pkg-line { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px; align-items: baseline; font-size: 12px; }
+.c-pkg-name { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.c-pkg-amt { color: var(--fg); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.c-pkg-when { color: var(--muted); font-size: 11px; white-space: nowrap; }
+.c-task-line { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
