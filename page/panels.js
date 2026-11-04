@@ -16,17 +16,6 @@
       ${sub ? `<div style="margin-top:4px;font-size:11px;color:#8aa39b">${esc(sub)}</div>` : ''}
     </div>`
 
-  const s = V.scheduler || {}
-  const st = V.stats || {}
-  const rm = V.reminders || []
-  const h = V.history || []
-
-  const sched = card(
-    '后台排程',
-    `${s.enabled ? '<b style="color:#0f9c78">开启</b>' : '<span style="color:#9a7b3a">关闭</span>'}
-     <div style="font-size:12px;color:#5b7a72;margin-top:2px">${esc((s.windows || []).join(' · ') || '—')}</div>`,
-    '去任务看板里改时间/开关',
-  )
   const today = card(
     '今日',
     `<b style="font-size:18px;color:#0f9c78">+${esc(st.creditsToday ?? 0)}</b> 积分
@@ -44,7 +33,7 @@
   const wrap = document.createElement('section')
   wrap.className = 'panel-readonly'
   wrap.style.cssText = 'display:flex;gap:12px;flex-wrap:wrap;margin:12px 0 4px'
-  wrap.innerHTML = sched + today + reminders
+  wrap.innerHTML = today + reminders
   ov.insertAdjacentElement('afterend', wrap)
 
   // 任务进度（快照里带了 taskStats/tasks 才显示）

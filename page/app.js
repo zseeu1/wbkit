@@ -114,7 +114,7 @@ function accountCard(a) {
   names.append(el('span', 'sub', [a.regionLabel, a.domain].filter(Boolean).join(' · ')))
   who.append(names)
   const flags = el('div', 'flags')
-  flags.append(el('span', `pill ${a.health === 'ok' ? 'ok' : 'warn'}`, a.health === 'ok' ? '可用' : a.healthNote || '待实测'))
+  flags.append(el('span', `pill ${a.error || a.health === 'error' ? 'warn' : a.health === 'ok' ? 'ok' : 'warn'}`, a.error ? '登录异常' : a.health === 'ok' ? '可用' : a.healthNote || '待实测'))
   if (a.checkin?.at) flags.append(el('span', `pill ${a.checkin.outcome === 'claimed' || a.checkin.outcome === 'done' ? 'ok' : 'warn'}`, outcomeText(a.checkin.outcome)))
   head.append(who, flags)
 
@@ -176,7 +176,7 @@ function compactRow(a) {
   expiry.append(el('span', 'sub', d == null ? '登录态 —' : `登录态 ${d} 天`))
 
   const flags = el('div', 'c-flags')
-  flags.append(el('span', `pill ${a.health === 'ok' ? 'ok' : 'warn'}`, a.health === 'ok' ? '可用' : a.healthNote || '待实测'))
+  flags.append(el('span', `pill ${a.error || a.health === 'error' ? 'warn' : a.health === 'ok' ? 'ok' : 'warn'}`, a.error ? '登录异常' : a.health === 'ok' ? '可用' : a.healthNote || '待实测'))
   if (a.checkin?.at) flags.append(el('span', `pill ${a.checkin.outcome === 'claimed' || a.checkin.outcome === 'done' ? 'ok' : 'warn'}`, outcomeText(a.checkin.outcome)))
 
   row.append(who, bal, expiry, flags)
