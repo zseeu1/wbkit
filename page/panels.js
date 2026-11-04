@@ -18,12 +18,12 @@
   autoPanel.innerHTML = `
     <div class="ctl-left">
       <span class="ctl-title">成长任务</span>
-      <span class="ctl-sub">${auto.autoTasks ? `已开，每天 ${auto.taskAt || '09:10'} 自动跑一轮` : '关（打开后到点自动对所有账号跑一轮成长任务）'}</span>
+      <span class="ctl-sub">${auto.autoTasks ? `已开，每天 ${auto.taskAt || '09:10'}（±5 分钟防风控）` : '关（打开后到点自动对所有账号跑一轮成长任务）'}</span>
     </div>
-    <div class="ctl-right" style="display:flex;align-items:center;gap:14px">
+    <div class="ctl-right ctl-row">
       <label class="time">
-        <span>时间</span>
-        <input type="time" data-a-at value="${String(auto.taskAt || '09:10')}" style="font:inherit;font-size:12px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:3px 7px"/>
+        <input type="time" data-a-at value="${String(auto.taskAt || '09:10')}"/>
+        <span>±5 分</span>
       </label>
       <label class="switch">
         <input type="checkbox" data-a-auto ${auto.autoTasks ? 'checked' : ''}/>
@@ -42,7 +42,7 @@
       if (mp?.options?.get && mp?.options?.set) {
         const cur = (await mp.options.get()) || {}
         await mp.options.set({ ...cur, autoTasks: !!autoCb.checked, taskAt: autoAt.value || '09:10' })
-        if (autoSub) autoSub.textContent = autoCb.checked ? `已开，每天 ${autoAt.value || '09:10'} 自动跑一轮` : '关（打开后到点自动对所有账号跑一轮成长任务）'
+        if (autoSub) autoSub.textContent = autoCb.checked ? `已开，每天 ${autoAt.value || '09:10'}（±5 分钟防风控）` : '关（打开后到点自动对所有账号跑一轮成长任务）'
       }
     } catch {} finally { saving = false }
   }

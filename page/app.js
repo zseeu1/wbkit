@@ -126,20 +126,35 @@ const actionDone = (action, a) => {
   return false
 }
 
+// 动作按钮的状态与文案（签到/成长/旅行统一；旅行区分 旅行中 / 已达上限）
+function actionStateFor(a, action) {
+  if (action === 'checkin') return checkedToday(a) ? { label: '已签到', done: true } : { label: '签到', done: false }
+  if (action === 'growth') return actionDone('growth', a) ? { label: '已完成', done: true } : { label: '成长', done: false }
+  const tv = (V?.travel?.accounts || []).find((x) => a.label && x.accountId === a.label)
+  if (tv?.state === 'traveling') return { label: '旅行中', done: true }
+  if (tv?.dailyLimitReached) return { label: '已达上限', done: true }
+  const la = a.lastAction
+  if (la && la.action === 'travel' && la.ok) return { label: '今日已旅行', done: true }
+  return { label: '旅行', done: false }
+}
+
 function checkedToday(a) {
-  const c = a?.checkin
-  if (c && (c.outcome === 'done' || c.outcome === 'claimed')) {
-    const today = V?.checkin?.today
-    if (c.date) { if (c.date === today) return true }
-    else if (c.at) { if (new Date(c.at).toDateString() === new Date().toDateString()) return true }
-    else return true
+  const today = V?.checkin?.today
+  const isDone = (x) => {
+    if (!x || (x.outcome !== 'done' && x.outcome !== 'claimed')) return false
+    if (x.date) return x.date === today
+    if (x.at) return new Date(x.at).toDateString() === new Date().toDateString()
+    return true
   }
+  if (isDone(a?.checkin)) return true
   const la = a?.lastAction
   if (la && la.action === 'checkin' && la.ok) {
     const at = Number(la.at) || Date.parse(la.atIso || '')
     if (Number.isFinite(at) && new Date(at).toDateString() === new Date().toDateString()) return true
   }
-  return false
+  // 账号卡上的 checkin 可能为空；再和签到记录快照对齐，避免按钮和胶囊打架
+  const ci = (V?.checkin?.accounts || []).find((x) => (a?.uid && x.uid === a.uid) || (a?.label && x.accountId === a.label))
+  return isDone(ci)
 }
 
 async function triggerAction(a, action) {
@@ -181,20 +196,20 @@ function accountCard(a) {
 
   const acts = el('div', 'card-actions')
   acts.style.cssText = 'display:flex;gap:8px;margin-top:10px;flex-wrap:wrap'
-  for (const [action, label] of [['checkin', '签到'], ['travel', '旅行'], ['growth', '成长']]) {
-    const done = actionDone(action, a)
-    const btn = el('button', 'btn ghost', done ? (action === 'checkin' ? '已签到' : action === 'travel' ? '旅行中' : '已完成') : label)
+  for (const action of ['checkin', 'travel', 'growth']) {
+    const st = actionStateFor(a, action)
+    const btn = el('button', 'btn ghost', st.label)
     btn.type = 'button'
-    btn.disabled = done
+    btn.disabled = st.done
     btn.style.cssText = 'font-size:12px;padding:5px 12px;border-radius:8px'
-    if (!done) btn.onclick = () => {
+    if (!st.done) btn.onclick = () => {
       btn.disabled = true
       btn.textContent = '已提交'
       triggerAction(a, action)
     }
     acts.append(btn)
   }
-  card.append(head, hero, el('div', 'sect-label', '近期作废'), packList, tokenLine, acts)
+  card.append(head, hero, el('div', 'sect-label', '积分包 · 前 5'), packList, tokenLine, acts)
   return card
 }
 
@@ -226,32 +241,47 @@ function compactRow(a, initialOpen = false) {
   names.append(sub)
   who.append(names)
 
-  // 积分条 + 剩余/总数
+  // 折叠态：余额 + 剩余/总量进度条（展开后不再重复显示）
   const bal = el('div', 'c-bal')
   const balNum = el('strong', null, a.error ? '—' : num(a.balance))
-  balNum.style.cssText = 'font-size:15px'
   const sizeNum = Number(a.size) || 0
   const balSub = el('span', 'c-bal-sub', sizeNum > 0 ? `/ ${num(sizeNum)}` : `· ${a.packagesTotal ?? 0} 包`)
   const balMeter = el('div', 'c-bal-meter')
   const balFill = el('span')
-  const pct = sizeNum > 0 ? Math.max(2, Math.min(100, (Number(a.balance) / sizeNum) * 100)) : (Number(a.balance) > 0 ? 100 : 2)
+  const balN = Number(a.balance) || 0
+  const pct = sizeNum > 0 ? Math.max(2, Math.min(100, (balN / sizeNum) * 100)) : (balN > 0 ? 100 : 2)
   balFill.style.width = `${pct}%`
+  // 快到期的积分类似卡片：进度条末段用即将到期的颜色
+  const soonPkgs = (a.packages || []).filter((p) => tone(p.runsOutAt) !== '')
+  const soonBal = soonPkgs.reduce((s, p) => s + (Number(p.balance ?? p.remain) || 0), 0)
+  if (soonBal > 0 && balN > 0) {
+    const urgent = soonPkgs.some((p) => tone(p.runsOutAt) === 'urgent')
+    const soonColor = urgent ? 'var(--orange)' : 'color-mix(in srgb, var(--green) 55%, var(--orange))'
+    const longShare = Math.max(0, Math.min(100, ((balN - Math.min(soonBal, balN)) / balN) * 100))
+    balFill.style.background = `linear-gradient(90deg, var(--accent) 0%, var(--green) ${longShare}%, ${soonColor} ${longShare}%, ${soonColor} 100%)`
+    balMeter.title = `${num(soonBal)} 积分即将到期`
+  }
   balMeter.append(balFill)
   const balTop = el('div', 'c-bal-top')
   balTop.append(balNum, balSub)
   bal.append(balTop, balMeter)
 
-  // 状态图标：4 个小圆点
+  // 四个状态点：健康 / 签到 / 成长 / 旅行；绿=正常或已完成，橙=需注意，灰=未开始/未知
   const dots = el('div', 'c-dots')
-  const addDot = (cls, title) => { const d=el('span',`c-dot ${cls}`);d.title=title;dots.append(d) }
-  addDot(a.error || a.health==='error' ? 'warn' : a.health==='ok' ? 'ok' : 'warn', a.error ? '登录异常' : a.health==='ok' ? '可用' : a.healthNote || '待实测')
-  addDot(checkedToday(a) ? 'ok' : '', checkedToday(a) ? '已签到' : '未签到')
-  const tv = (V?.travel?.accounts||[]).find(x=>a.label&&x.accountId===a.label)
-  addDot(tv&&tv.state==='traveling' ? 'ok' : '', tv&&tv.state==='traveling'?'旅行中':'未旅行')
-  const allDone = !!(a.taskStats && a.taskStats.done === a.taskStats.total && a.taskStats.notAccepted === 0)
-  addDot(allDone ? 'ok' : '', allDone ? '成长完成' : '成长未完成')
+  const addDot = (cls, title) => { const d = el('span', `c-dot ${cls}`); d.title = title; dots.append(d) }
+  addDot(a.error || a.health === 'error' ? 'warn' : a.health === 'ok' ? 'ok' : 'warn', a.error ? '登录异常' : a.health === 'ok' ? '可用' : a.healthNote || '待实测')
+  const signed = checkedToday(a)
+  addDot(signed ? 'ok' : '', signed ? '已签到' : '未签到')
+  const tsDot = a.taskStats
+  const gDone = !!(tsDot && tsDot.done === tsDot.total && tsDot.notAccepted === 0)
+  const gProgress = !!(tsDot && (tsDot.active > 0 || tsDot.done > 0))
+  addDot(gDone ? 'ok' : gProgress ? 'warn' : '', gDone ? '成长完成' : tsDot ? `成长 ${tsDot.done}/${tsDot.total}` : '无成长任务')
+  const tvDot = (V?.travel?.accounts || []).find((x) => a.label && x.accountId === a.label)
+  const travelCls = tvDot?.state === 'traveling' ? 'ok' : tvDot?.dailyLimitReached ? 'warn' : ''
+  addDot(travelCls, tvDot?.state === 'traveling' ? '旅行中' : tvDot?.dailyLimitReached ? '今日已达上限' : '可旅行')
 
-  const chev = el('span', 'c-chevron', '›')
+  const chev = el('span', 'c-chevron')
+  chev.innerHTML = '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 
   row.append(who, bal, dots, chev)
   const detail = el('div', 'c-detail')
@@ -268,9 +298,29 @@ function compactRow(a, initialOpen = false) {
     for (const n of nodes) if (n != null) d.append(n)
     return d
   }
+  // 分区标题 + 右侧状态/动作按钮（三块统一：标题左、状态按钮右）
+  const secAct = (title, action) => {
+    const w = el('div', 'c-sec')
+    const h = el('div', 'c-sec-h')
+    h.append(el('span', 'c-sec-t', title))
+    const st = actionStateFor(a, action)
+    const btn = el('button', 'btn ghost c-act', st.label)
+    btn.type = 'button'
+    btn.disabled = st.done
+    if (!st.done) btn.onclick = () => { btn.disabled = true; btn.textContent = '已提交'; triggerAction(a, action) }
+    h.append(btn)
+    w.append(h)
+    return w
+  }
 
-  // 左：积分包按名称聚合（同一个包重复出现很多行会很乱）
+  // 左：登录态 + 积分包（展开后的详细区，不再重复积分概览条）
   const left = el('div', 'c-col')
+  const dExp = days(a.expiresAt)
+  const acct = sec('登录态')
+  acct.append(kv(el('span', null, a.expiresAt ? `到期 ${md(a.expiresAt)}` : '到期 —'), el('span', 'c-muted', dExp != null ? `剩 ${dExp} 天` : '')))
+  if (a.regionLabel || a.domain) acct.append(kv(el('span', 'c-muted', [a.regionLabel, a.domain].filter(Boolean).join(' · '))))
+  left.append(acct)
+
   const groups = new Map()
   for (const p of a.packages || []) {
     const k = p.name || '积分包'
@@ -282,16 +332,6 @@ function compactRow(a, initialOpen = false) {
     groups.set(k, g)
   }
   const list = [...groups.values()].sort((x, y) => (x.runsOutAt || Infinity) - (y.runsOutAt || Infinity))
-  const overview = sec('积分概览')
-  overview.append(kv(el('span', null, `${num(a.balance)} / ${num(a.size)} 可用`)))
-  const dmeter = el('div', 'c-meter')
-  const dfill = el('span')
-  const detPct = Number(a.size) > 0 ? Math.max(2, Math.min(100, (Number(a.balance) / Number(a.size)) * 100)) : 2
-  dfill.style.width = `${detPct}%`
-  dmeter.append(dfill)
-  overview.append(dmeter)
-  left.append(overview)
-
   const pk = sec(`积分包 · 共 ${a.packagesTotal ?? 0} 个`)
   if ((a.packagesTotal ?? 0) > (a.packages?.length ?? 0)) pk.append(el('div', 'c-pkg-sub', `已载入最近到期的 ${a.packages.length} 个`))
   if (list.length) {
@@ -306,40 +346,21 @@ function compactRow(a, initialOpen = false) {
   } else pk.append(el('p', 'muted', '没有可用的积分包'))
   left.append(pk)
 
-  // 右：签到 / 成长 / 旅行 / 最近动作
+  // 右：每日签到 / 成长 / 猫猫旅行（标题右侧直接是状态/动作，视觉统一）
   const right = el('div', 'c-col')
-  const ci = (V?.checkin?.accounts || []).find((x) => (a.uid && x.uid === a.uid) || (a.label && x.accountId === a.label))
-  const ck = sec('每日签到')
-  ck.append(kv(el('span', `pill ${ci && (ci.outcome === 'done' || ci.outcome === 'claimed') ? 'ok' : 'warn'}`, ci ? outcomeText(ci.outcome) : checkedToday(a) ? '已签到' : '未签到'), el('span', 'c-muted', ci?.at ? md(ci.at) : '')))
-  right.append(ck)
+  right.append(secAct('每日签到', 'checkin'))
 
   const ts = a.taskStats
-  const gr = sec('成长')
+  const gr = secAct('成长', 'growth')
   gr.append(kv(el('span', null, ts ? `任务 ${ts.done}/${ts.total}` : a.tasksError ? '读取失败' : '暂无任务快照'), el('span', 'c-muted', ts ? `进行中 ${ts.active} · 待接取 ${ts.notAccepted}` : '')))
   for (const t of (a.tasks || []).filter((x) => !(x.target > 0 && x.current >= x.target)).slice(0, 3)) {
-    const row = el('div', 'c-task-row')
-    row.append(el('span', 'c-task-name', t.title), el('span', 'c-task-meta', `${t.current}/${t.target}${t.reward ? ` · +${t.reward}` : ''}`))
-    gr.append(row)
+    const trow = el('div', 'c-task-row')
+    trow.append(el('span', 'c-task-name', t.title), el('span', 'c-task-meta', `${t.current}/${t.target}${t.reward ? ` · +${t.reward}` : ''}`))
+    gr.append(trow)
   }
   right.append(gr)
 
-  const ztv = (V?.travel?.accounts || []).find((x) => a.label && x.accountId === a.label)
-  const tr = sec('猫猫旅行')
-  tr.append(kv(el('span', null, ztv?.label || '—'), el('span', 'c-muted', ztv?.last?.message || '')))
-  right.append(tr)
-
-
-
-  // 动作按钮（展开时显示）
-  const detailActs = el('div', 'c-detail-acts')
-  for (const [action, label] of [['checkin', '签到'], ['travel', '旅行'], ['growth', '成长']]) {
-    const done = actionDone(action, a)
-    const btn = el('button', 'btn ghost', done ? (action === 'checkin' ? '已签到' : action === 'travel' ? '旅行中' : '已完成') : label)
-    btn.type = 'button'; btn.disabled = done; btn.style.cssText = 'font-size:11px;padding:4px 10px;border-radius:7px'
-    if (!done) btn.onclick = () => { btn.disabled = true; btn.textContent = '已提交'; triggerAction(a, action) }
-    detailActs.append(btn)
-  }
-  right.append(detailActs)
+  right.append(secAct('猫猫旅行', 'travel'))
 
   grid.append(left, right)
   inner.append(grid)
@@ -473,9 +494,8 @@ function paintTransfer() {
   const importBtn = document.getElementById('tf-import')
   const exportBtn = document.getElementById('tf-export')
   const area = document.getElementById('tf-text')
-  const actions = document.getElementById('tf-actions')
   const toggle = document.getElementById('tf-toggle')
-  const bodyEls = [area, status, actions]
+  const bodyEls = [area]
   const setOpen = (open) => {
     for (const node of bodyEls) if (node) node.hidden = !open
     if (toggle) { toggle.textContent = open ? '收起' : '展开'; toggle.setAttribute('aria-expanded', String(open)) }
@@ -489,32 +509,38 @@ function paintTransfer() {
   status.replaceChildren()
   const lastImport = tf.lastImport
   const lastExport = tf.lastExport
+  const eventHead = (text, ok, at) => {
+    const h = el('div', 'ck-event-head')
+    h.append(el('span', `pill ${ok ? 'ok' : 'warn'}`, text), el('span', 'ck-when', md(at)))
+    return h
+  }
   if (lastImport?.at) {
     const ok = lastImport.ok !== false
-    const line = el('span', 'ck-acc')
     let text
     if (!ok) text = '导入失败'
     else if ((lastImport.added ?? 0) === 0 && !lastImport.renamed && !lastImport.dropped) text = `已是最新（${lastImport.imported} 个账号都在）`
     else {
-      const bits = [`${lastImport.imported} 个`]
+      const bits = [`导入 ${lastImport.imported} 个`]
       if (lastImport.added) bits.push(`新增 ${lastImport.added}`)
       if (lastImport.renamed) bits.push(`改名 ${lastImport.renamed}`)
-      if (lastImport.dropped) bits.push(`清理 ${lastImport.dropped}`)
-      text = `导入 ${bits.join(' · ')}`
+      text = bits.join(' · ')
     }
-    line.append(el('span', `pill ${ok ? 'ok' : 'warn'}`, text))
-    line.append(el('span', 'ck-when', md(lastImport.at)))
-    if (!ok && lastImport.error) line.append(el('span', 'ck-when', String(lastImport.error).slice(0, 60)))
-    status.append(line)
+    const ev = el('div', 'ck-event')
+    ev.append(eventHead(text, ok, lastImport.at))
+    if (ok && lastImport.dropped) ev.append(el('div', 'ck-note', `已删除 ${lastImport.dropped} 个旧账号（本次导入里没有的）`))
+    if (!ok && lastImport.error) ev.append(el('div', 'ck-note', String(lastImport.error).slice(0, 120)))
+    status.append(ev)
   }
   if (lastExport?.at) {
-    const line = el('span', 'ck-acc')
-    line.append(el('span', `pill ${lastExport.ok === false ? 'warn' : 'ok'}`, lastExport.ok === false ? '导出失败' : `导出 ${lastExport.count} 个`))
-    const fileEl = el('span', 'ck-when mono', lastExport.file || '')
-    if (lastExport.file) fileEl.title = lastExport.file
-    line.append(fileEl)
-    line.append(el('span', 'ck-when', md(lastExport.at)))
-    status.append(line)
+    const ok = lastExport.ok !== false
+    const ev = el('div', 'ck-event')
+    ev.append(eventHead(ok ? `导出 ${lastExport.count} 个` : '导出失败', ok, lastExport.at))
+    if (lastExport.file) {
+      const p = el('div', 'ck-path', lastExport.file)
+      p.title = lastExport.file
+      ev.append(p)
+    }
+    status.append(ev)
   }
   if (!status.children.length) sub.textContent = '把 wb-switch 的导出整份粘进来，或者把 magpie 里的账号导回去。'
 

@@ -4,12 +4,12 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>wbkit</title>
-    <link rel="stylesheet" href="style.css?v=20261104-5-4-3" />
+    <link rel="stylesheet" href="style.css?v=20261104-6-0-5" />
     <script src="_magpie/bridge.js"></script>
     <script src="data.js"></script>
-    <script src="app.js?v=20261104-5-4-3" defer></script>
-    <script src="panels.js?v=20261104-5-4-3" defer></script>
-    <script src="servicebar.js?v=20261104-5-4-3" defer></script>
+    <script src="app.js?v=20261104-6-0-5" defer></script>
+    <script src="panels.js?v=20261104-6-0-5" defer></script>
+    <script src="servicebar.js?v=20261104-6-0-5" defer></script>
   </head>
   <body>
     <header class="top">
@@ -75,19 +75,19 @@
     </section>
 
     <section class="control transfer" id="transfer">
-      <div class="ctl-left">
-        <div style="display:flex;align-items:center;gap:10px">
+      <div class="tf-top">
+        <div class="tf-head">
           <span class="ctl-title">导入 / 导出账号</span>
+          <span class="ctl-sub" id="tf-sub">把 wb-switch 的导出整份粘进来，或者把 magpie 里的账号导回去。</span>
+        </div>
+        <div class="tf-actions" id="tf-actions">
+          <button type="button" class="btn" id="tf-import">导入到 magpie</button>
+          <button type="button" class="btn ghost" id="tf-export">导出到 wb-switch</button>
           <button type="button" class="btn ghost" id="tf-toggle" aria-expanded="false">展开</button>
         </div>
-        <span class="ctl-sub" id="tf-sub">把 wb-switch 的导出整份粘进来，或者把 magpie 里的账号导回去。</span>
-        <textarea id="tf-text" rows="4" spellcheck="false" hidden placeholder='粘贴 wb-switch 导出的 JSON：[{"uid":"…","access_token":"…","refresh_token":"…","nickname":"…"}]'></textarea>
-        <div class="ctl-accounts" id="tf-status" hidden></div>
       </div>
-      <div class="ctl-right tf-actions" id="tf-actions" hidden>
-        <button type="button" class="btn" id="tf-import">导入到 magpie</button>
-        <button type="button" class="btn ghost" id="tf-export">导出 wb-switch 格式</button>
-      </div>
+      <textarea id="tf-text" rows="4" spellcheck="false" hidden placeholder='粘贴 wb-switch 导出的 JSON：[{"uid":"…","access_token":"…","refresh_token":"…","nickname":"…"}]'></textarea>
+      <div class="tf-info" id="tf-status"></div>
     </section>
 
     <footer class="foot">

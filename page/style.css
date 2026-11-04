@@ -237,6 +237,10 @@ code {
 .ctl-sub { font-size: 12px; color: var(--muted); }
 .ctl-accounts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
 .ck-acc { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+.ck-event { display: flex; flex-direction: column; gap: 4px; }
+.ck-event-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; font-size: 12px; }
+.ck-note { font-size: 11px; color: var(--muted); }
+.ck-path { font: 11px/1.5 var(--mono); color: var(--muted); white-space: normal; overflow-wrap: anywhere; word-break: break-all; }
 .ck-name { color: var(--fg); }
 .ck-when { color: var(--muted); }
 .ctl-right { flex: none; }
@@ -311,9 +315,9 @@ code {
 .rows { display: grid; gap: 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
 .crow {
   display: grid;
-  grid-template-columns: minmax(180px, 1.5fr) 110px 130px minmax(140px, auto) auto;
+  grid-template-columns: minmax(140px, 1fr) 320px auto auto;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   padding: 10px 14px 12px;
   border-top: 1px solid var(--line);
   background: var(--surface);
@@ -325,7 +329,7 @@ code {
 .c-names { display: flex; flex-direction: column; min-width: 0; }
 .c-names strong { font-size: 13px; font-weight: 600; }
 .c-names .sub, .c-bal .sub, .c-exp .sub { font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.c-bal { display: flex; align-items: baseline; gap: 6px; justify-content: flex-end; }
+.c-bal { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 4px; min-width: 0; }
 .c-bal strong { font-size: 16px; font-weight: 650; letter-spacing: -0.2px; }
 .c-exp { display: flex; flex-direction: column; align-items: flex-start; }
 .c-when { font-size: 12px; }
@@ -335,17 +339,21 @@ code {
 .c-acts .btn { line-height: 1.4; }
 
 @media (max-width: 760px) {
-  .crow { grid-template-columns: 1fr auto; gap: 6px 12px; }
-  .c-exp { grid-column: 1 / -1; flex-direction: row; gap: 8px; }
-  .c-flags { grid-column: 1 / -1; justify-content: flex-start; }
-  .c-acts { grid-column: 1 / -1; justify-content: flex-start; }
+  .crow { grid-template-columns: 1fr auto; gap: 6px 12px; align-items: start; }
+  .c-who { grid-column: 1; grid-row: 1; }
+  .c-chevron { grid-column: 2; grid-row: 1; justify-self: end; align-self: center; }
+  .c-dots { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; }
+  .c-bal { grid-column: 1 / -1; grid-row: 3; align-items: flex-start; width: 100%; }
+  .c-bal-meter { width: 100%; }
 }
 
 .time input.num { width: 52px; text-align: center; }
 .ctl-accounts .ck-when { max-width: 22em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.transfer { align-items: flex-start; }
-.transfer .ctl-left { flex: 1; }
+.transfer { display: flex; flex-direction: column; align-items: stretch; gap: 10px; }
+.tf-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.tf-head { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.tf-info { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px 22px; }
 #tf-text {
   margin-top: 8px;
   width: 100%;
@@ -359,7 +367,7 @@ code {
   padding: 8px 10px;
 }
 #tf-text::placeholder { color: color-mix(in srgb, var(--fg) 38%, transparent); }
-.tf-actions { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+.tf-actions { display: flex; flex-direction: row; gap: 8px; align-items: center; flex-wrap: wrap; }
 .btn.ghost {
   border-color: var(--line);
   background: transparent;
@@ -422,7 +430,7 @@ input[type="checkbox"]:focus-visible { outline: var(--focus-ring); outline-offse
    结构：品牌标题条 → 汇总条 → 账号列表 → 控制区 → 信息区 → 页脚。
    同一套青绿 + 深浅主题；卡片带极轻顶部高光，hover 轻上浮。 */
 body {
-  max-width: 1120px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: clamp(20px, 3vw, 34px) clamp(16px, 3vw, 34px) 56px;
   background:
@@ -449,9 +457,9 @@ body {
 
 .list-head { margin: 26px 0 14px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
 .list-head h2 { font-size: 16px; letter-spacing: -0.1px; }
-.cards { grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 18px; }
+.cards { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
 .card {
-  position: relative; border-radius: 20px; padding: 20px 20px 16px; overflow: hidden;
+  position: relative; border-radius: 20px; padding: 18px 18px 14px; overflow: hidden;
   background: linear-gradient(180deg, color-mix(in srgb, var(--fg) 6%, transparent), color-mix(in srgb, var(--fg) 2.5%, transparent));
   border: 1px solid color-mix(in srgb, var(--fg) 12%, transparent);
 }
@@ -509,10 +517,12 @@ body {
 .crow { cursor: pointer; }
 .crow:hover { background: var(--surface-2); }
 .c-chevron {
-  appearance: none; border: 0; background: transparent; color: var(--muted);
-  font-size: 16px; line-height: 1; padding: 2px 4px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; color: var(--muted);
+  cursor: pointer; justify-self: end; user-select: none;
   transition: transform 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
+.c-chevron svg { display: block; }
 .c-detail {
   display: grid; grid-template-rows: 0fr;
   transition: grid-template-rows 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -537,7 +547,9 @@ body {
 .c-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; padding: 14px 18px 16px 56px; }
 .c-col + .c-col { border-left: 1px solid var(--line); padding-left: 18px; }
 .c-sec { min-width: 0; }
-.c-sec-h { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.c-sec-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.c-sec-t { min-width: 0; }
+.c-act.btn { flex: none; font-size: 11px; font-weight: 600; letter-spacing: 0; text-transform: none; padding: 3px 9px; border-radius: 7px; }
 .c-kv { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12.5px; color: var(--fg); }
 .c-muted { font-size: 11.5px; color: var(--muted); }
 .c-pkg-group { padding: 6px 0; border-bottom: 1px dashed color-mix(in srgb, var(--fg) 8%, transparent); }
@@ -557,14 +569,15 @@ body {
 .c-meter { height: 6px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin-top: 6px; }
 .c-meter span { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 70%, transparent), var(--green)); }
 /* 紧凑行 v4：条上图标化 + 积分条 */
-.c-bal-top { display: flex; align-items: baseline; gap: 6px; }
-.c-bal-sub { font-size: 11px; color: var(--muted); }
-.c-bal-meter { height: 5px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin-top: 4px; width: 100%; }
+.c-bal-top { display: flex; align-items: baseline; gap: 5px; white-space: nowrap; }
+.c-bal-sub { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.c-bal-meter { height: 5px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin-top: 4px; width: 100%; min-width: 96px; }
 .c-bal-meter span { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--green)); }
 .c-dots { display: flex; gap: 6px; align-items: center; justify-content: flex-end; }
 .c-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
 .c-dot.ok { background: var(--green); }
 .c-dot.warn { background: var(--orange); }
-.c-chevron { color: var(--muted); font-size: 18px; line-height: 1; cursor: pointer; transition: transform 0.26s cubic-bezier(0.2, 0.8, 0.2, 1); user-select: none; }
+.c-chevron:hover { color: var(--fg); }
 .crow[aria-expanded="true"] .c-chevron { transform: rotate(90deg); }
 .c-detail-acts { display: flex; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+/* 动作按钮已移入各分区标题右侧（.c-act） */
