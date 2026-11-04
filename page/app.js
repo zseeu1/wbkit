@@ -369,7 +369,9 @@ function paintTransfer() {
   if (lastExport?.at) {
     const line = el('span', 'ck-acc')
     line.append(el('span', `pill ${lastExport.ok === false ? 'warn' : 'ok'}`, lastExport.ok === false ? '导出失败' : `导出 ${lastExport.count} 个`))
-    line.append(el('span', 'ck-when mono', lastExport.file ? String(lastExport.file).replace(/^.*\//, '') : ''))
+    const fileEl = el('span', 'ck-when mono', lastExport.file || '')
+    if (lastExport.file) fileEl.title = lastExport.file
+    line.append(fileEl)
     line.append(el('span', 'ck-when', md(lastExport.at)))
     status.append(line)
   }
