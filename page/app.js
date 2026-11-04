@@ -104,6 +104,10 @@ function packageRow(p) {
   return row
 }
 
+function actionZh(a) {
+  return { checkin: '签到', travel: '旅行', growth: '成长', auto: '自动成长' }[a] || a
+}
+
 // 今天是否已签到：已签到时不再显示「签到」按钮，避免和状态胶囊重复
 function checkedToday(a) {
   const c = a?.checkin
@@ -119,7 +123,7 @@ async function triggerAction(a, action) {
   try {
     const opts = (await magpie.options.get()) || {}
     await magpie.options.set({ ...opts, pendingAction: { at: Date.now(), uid: a.key || a.uid, action } })
-    setTimeout(() => { try { location.reload() } catch {} }, 3500)
+    setTimeout(() => { try { location.reload() } catch {} }, action === 'growth' ? 8000 : 3500)
   } catch {}
 }
 
@@ -167,7 +171,15 @@ function accountCard(a) {
     }
     acts.append(btn)
   }
+  const la = a.lastAction
+  const lastEl = el('div', 'last-action')
+  if (la) {
+    lastEl.style.cssText = 'margin-top:8px;font-size:11.5px;color:var(--muted);display:flex;gap:6px;align-items:center;flex-wrap:wrap'
+    lastEl.append(el('span', `pill ${la.ok ? 'ok' : 'warn'}`, `${actionZh(la.action)}${la.ok ? '成功' : '失败'}`))
+    lastEl.append(el('span', null, `${la.message || ''} · ${md(la.at)}`))
+  }
   card.append(head, hero, el('div', 'sect-label', '近期作废'), packList, tokenLine, acts)
+  if (la) card.append(lastEl)
   return card
 }
 
@@ -211,6 +223,12 @@ function compactRow(a) {
   const flags = el('div', 'c-flags')
   flags.append(el('span', `pill ${a.error || a.health === 'error' ? 'warn' : a.health === 'ok' ? 'ok' : 'warn'}`, a.error ? '登录异常' : a.health === 'ok' ? '可用' : a.healthNote || '待实测'))
   if (a.checkin?.at) flags.append(el('span', `pill ${a.checkin.outcome === 'claimed' || a.checkin.outcome === 'done' ? 'ok' : 'warn'}`, outcomeText(a.checkin.outcome)))
+  if (a.lastAction) {
+    const la = a.lastAction
+    const p = el('span', `pill ${la.ok ? 'ok' : 'warn'}`, `${actionZh(la.action)}${la.ok ? '成功' : '失败'}`)
+    if (la.message) p.title = la.message
+    flags.append(p)
+  }
 
   const acts = el('div', 'c-acts')
   for (const [action, label] of [['checkin', '签到'], ['travel', '旅行'], ['growth', '成长']]) {
