@@ -47,21 +47,6 @@ function accounts() {
   return tab === 'all' ? rows : rows.filter((a) => a.region === tab)
 }
 
-// 状态记录按账号键对齐：宿主新建的账号只有令牌，uid 与 accountId 都是空，
-// 只按 uid / 昵称对会让这些账号认不到自己的记录（甚至互相串）。老记录没有 key
-// 时退回 uid，最后才用昵称兜底。
-function rowOf(rows, a) {
-  const list = rows || []
-  return (
-    (a?.key && list.find((x) => x.key === a.key)) ||
-    (a?.uid && list.find((x) => x.uid === a.uid)) ||
-    (a?.label && list.find((x) => x.accountId === a.label)) ||
-    null
-  )
-}
-const travelRowOf = (a) => rowOf(V?.travel?.accounts, a)
-const checkinRowOf = (a) => rowOf(V?.checkin?.accounts, a)
-
 function paintTabs() {
   const host = document.getElementById('seg')
   host.replaceChildren()
@@ -137,7 +122,7 @@ function actionZh(a) {
 const actionDone = (action, a) => {
   if (action === 'checkin') return checkedToday(a)
   if (action === 'travel') {
-    const tv = travelRowOf(a)
+    const tv = (V?.travel?.accounts || []).find((x) => a.label && x.accountId === a.label)
     const isTraveling = !!(tv && tv.state === 'traveling')
     const la = a.lastAction
     return isTraveling || (la && la.action === 'travel' && la.ok)
@@ -155,7 +140,7 @@ const actionDone = (action, a) => {
 function actionStateFor(a, action) {
   if (action === 'checkin') return checkedToday(a) ? { label: '已签到', done: true } : { label: '签到', done: false }
   if (action === 'growth') return actionDone('growth', a) ? { label: '已完成', done: true } : { label: '成长', done: false }
-  const tv = travelRowOf(a)
+  const tv = (V?.travel?.accounts || []).find((x) => a.label && x.accountId === a.label)
   if (tv?.state === 'traveling') return { label: '旅行中', done: true }
   if (tv?.dailyLimitReached) return { label: '已达上限', done: true }
   const la = a.lastAction
@@ -178,7 +163,7 @@ function checkedToday(a) {
     if (Number.isFinite(at) && new Date(at).toDateString() === new Date().toDateString()) return true
   }
   // 账号卡上的 checkin 可能为空；再和签到记录快照对齐，避免按钮和胶囊打架
-  const ci = checkinRowOf(a)
+  const ci = (V?.checkin?.accounts || []).find((x) => (a?.uid && x.uid === a.uid) || (a?.label && x.accountId === a.label))
   return isDone(ci)
 }
 
@@ -301,7 +286,7 @@ function compactRow(a, initialOpen = false) {
   const gDone = !!(tsDot && tsDot.done === tsDot.total && tsDot.notAccepted === 0)
   const gProgress = !!(tsDot && (tsDot.active > 0 || tsDot.done > 0))
   addDot(gDone ? 'ok' : gProgress ? 'warn' : '', gDone ? '成长完成' : tsDot ? `成长 ${tsDot.done}/${tsDot.total}` : '无成长任务')
-  const tvDot = travelRowOf(a)
+  const tvDot = (V?.travel?.accounts || []).find((x) => a.label && x.accountId === a.label)
   const travelCls = tvDot?.state === 'traveling' ? 'ok' : tvDot?.dailyLimitReached ? 'ok' : ''
   addDot(travelCls, tvDot?.state === 'traveling' ? '旅行中' : tvDot?.dailyLimitReached ? '今日已达上限' : '可旅行')
 
