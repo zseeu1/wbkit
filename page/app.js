@@ -293,7 +293,7 @@ function compactRow(a, initialOpen = false) {
 
   // 四个状态点：健康 / 签到 / 成长 / 旅行；绿=正常或已完成，橙=需注意，灰=未开始/未知
   const dots = el('div', 'c-dots')
-  const addDot = (cls, title) => { const d = el('span', `c-dot ${cls}`); d.title = title; dots.append(d) }
+  const addDot = (cls, title) => { const d = el('span', `c-dot ${cls}`); d.title = title; d.dataset.tip = title; dots.append(d) }
   addDot(a.error || a.health === 'error' ? 'warn' : a.health === 'ok' ? 'ok' : 'warn', a.error ? '登录异常' : a.health === 'ok' ? '可用' : a.healthNote || '待实测')
   const signed = checkedToday(a)
   addDot(signed ? 'ok' : '', signed ? '已签到' : '未签到')

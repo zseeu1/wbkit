@@ -312,7 +312,10 @@ code {
 .density-btn.on { background: var(--bg); color: var(--fg); }
 
 /* 紧凑模式：一行一个账号 */
-.rows { display: grid; gap: 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+/* 不用 overflow:hidden —— 状态点的悬停提示要能出界，首尾行自己带圆角 */
+.rows { display: grid; gap: 0; border: 1px solid var(--line); border-radius: var(--radius); }
+.rows > .crow:first-child { border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0; }
+.rows > .crow:last-of-type { border-radius: 0 0 calc(var(--radius) - 1px) calc(var(--radius) - 1px); }
 .crow {
   display: grid;
   grid-template-columns: minmax(140px, 1fr) 320px auto auto;
@@ -581,3 +584,33 @@ body {
 .crow[aria-expanded="true"] .c-chevron { transform: rotate(90deg); }
 .c-detail-acts { display: flex; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
 /* 动作按钮已移入各分区标题右侧（.c-act） */
+
+/* 刷新按钮的加载态：细环 spinner，颜色跟着按钮文字走（深浅主题都不用单独调） */
+.spin {
+  display: inline-block; width: 12px; height: 12px; flex: none;
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in srgb, currentColor 32%, transparent);
+  border-top-color: currentColor;
+  animation: wb-spin 0.8s linear infinite;
+}
+@keyframes wb-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation-duration: 2.4s; } }
+
+/* 状态点的悬停提示：纯 CSS，替代原生 title（要等一秒、还是系统灰框） */
+.c-dot { position: relative; }
+.c-dot::after {
+  content: attr(data-tip);
+  position: absolute; bottom: calc(100% + 9px); left: 50%;
+  transform: translateX(-50%) translateY(3px);
+  padding: 4px 8px; border-radius: 7px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  color: var(--fg);
+  font: 500 11px/1.35 var(--magpie-font, -apple-system, system-ui, sans-serif);
+  white-space: nowrap;
+  opacity: 0; pointer-events: none; z-index: 8;
+  transition: opacity 0.14s ease, transform 0.14s ease;
+}
+.c-dot:hover::after { opacity: 1; transform: translateX(-50%) translateY(0); }
+@media (prefers-reduced-motion: reduce) { .c-dot::after { transition: none; } }

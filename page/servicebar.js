@@ -22,11 +22,22 @@
   bar.innerHTML = `
     <div style="font-size:12px;color:#5b7a72">快照时间：<b data-gen style="color:#0f3d33">${escapeHtml(generated)}</b>
       <span style="margin-left:8px;color:#8aa39b">页面只读快照，点刷新重新生成</span></div>
-    <button data-refresh style="border:0;border-radius:9px;background:#0f9c78;color:#fff;padding:7px 14px;font-size:13px;cursor:pointer">刷新</button>`
+    <button data-refresh style="border:0;border-radius:9px;background:#0f9c78;color:#fff;padding:7px 14px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px"><span class="spin" data-spin hidden></span><span data-label>刷新</span></button>`
   host.insertAdjacentElement('afterend', bar)
   const genEl = bar.querySelector('[data-gen]')
+  const btn = bar.querySelector('[data-refresh]')
+  const spin = bar.querySelector('[data-spin]')
+  const label = bar.querySelector('[data-label]')
+  const setBusy = (busy) => {
+    if (spin) spin.hidden = !busy
+    if (label) label.textContent = busy ? '刷新中…' : '刷新'
+    if (btn) btn.disabled = busy
+    if (btn) btn.style.opacity = busy ? '0.75' : ''
+    if (btn) btn.style.cursor = busy ? 'default' : 'pointer'
+  }
 
-  bar.querySelector('[data-refresh]')?.addEventListener('click', async () => {
+  btn?.addEventListener('click', async () => {
+    setBusy(true)
     try {
       if (genEl) genEl.textContent = '刷新中…（重载插件并重生成快照）'
       if (mp?.options?.set) {
@@ -37,6 +48,7 @@
         try { location.reload() } catch {}
       }
     } catch (e) {
+      setBusy(false)
       if (genEl) genEl.textContent = '刷新失败：' + (e?.message ?? e)
     }
   })
