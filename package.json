@@ -1,6 +1,6 @@
 {
   "name": "wbkit",
-  "version": "0.5.8",
+  "version": "0.5.9",
   "description": "WorkBuddy 一体化补位插件：账号池、账号页、签到、猫猫旅行、批量成长任务（接取→点亮→轮询→领奖）、模型目录/套餐、官方用量与本地看板。供应商与登录交给社区插件 opencode-workbuddy-auth。",
   "type": "module",
   "main": "./index.mjs",

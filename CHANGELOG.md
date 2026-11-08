@@ -1,5 +1,9 @@
 # 更新记录
 
+## v0.5.9
+
+- 修：刷新按钮的转圈一直转，用户没点也在转。`.spin` 的 `display: inline-block` 盖掉了 `hidden` 自带的 `display: none`，补一条 `.spin[hidden] { display: none }`
+
 ## v0.5.8
 
 - 刷新按钮加了加载态：细环 spinner + 文案变「刷新中…」，点击期间按钮置灰不可重复点。环的颜色跟着按钮文字走（`currentColor`），深浅主题都不用单独调
