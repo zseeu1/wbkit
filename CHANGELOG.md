@@ -3,6 +3,10 @@
 ## v0.5.9
 
 - 修：刷新按钮的转圈一直转，用户没点也在转。`.spin` 的 `display: inline-block` 盖掉了 `hidden` 自带的 `display: none`，补一条 `.spin[hidden] { display: none }`
+- 账号池可以超过 5 个了（@domain1354 贡献，#10）：之前「只支持 5 个」不是宿主限制，是 wbkit 自己的 drop 逻辑——`importRecords` 把「这次清单里没有的、之前 wbkit 导入的账号」一律当已消失清掉，分次加账号时每加一批就顶掉上一批，总数被锁在最后一批。现在增量导入只加/更新不删；整包替换时显式传 `prune=true` 才清理清单外的旧账号（`wbkit_pool --prune`）
+- 探活改成并发（上限 5 并行）：20 个账号导入不再顶到插件 20 秒加载上限
+- 导入成功且有新增账号时，插件自动重启一次，magpie 立刻认到新账号、进路由
+- 测试 73 条（新增 `test/importer-prune.test.mjs` 2 条：增量不删 / 整包才清）
 
 ## v0.5.8
 
