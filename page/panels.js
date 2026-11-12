@@ -54,17 +54,18 @@
   if (withTasks.length) {
     const rows = withTasks.map((a) => {
       const st = a.taskStats
+      // 未完成列把「需本人完成」的任务也列出来并标注，否则待接取 2 却看不出是哪两个
       const open = (a.tasks || [])
-        .filter((t) => !(t.target > 0 && t.current >= t.target) && !t.manual)
+        .filter((t) => !(t.target > 0 && t.current >= t.target))
         .slice(0, 4)
-        .map((t) => `${esc(t.title)}（${esc(t.current)}/${esc(t.target)}${t.reward ? `，+${esc(t.reward)}` : ''}）`)
+        .map((t) => `${t.manual ? '需本人：' : ''}${esc(t.title)}（${esc(t.current)}/${esc(t.target)}${t.reward ? `，+${esc(t.reward)}` : ''}）`)
         .join('；')
       return `<tr>
         <td style="padding:5px 8px;white-space:nowrap">${esc(a.label)}</td>
-        <td style="padding:5px 8px;color:var(--green)">${esc(st.done)}/${esc(st.total)}</td>
+        <td style="padding:5px 8px;color:var(--green)">${esc(st.autoDone ?? st.done)}/${esc(st.autoTotal ?? st.total)}</td>
         <td style="padding:5px 8px;color:var(--orange)">${esc(st.active)}</td>
         <td style="padding:5px 8px;color:var(--orange)">${esc(st.notAccepted)}</td>
-        <td style="padding:5px 8px;color:var(--muted)">${open || (a.tasksError ? esc(a.tasksError) : '—')}</td>
+        <td style="padding:5px 8px;color:var(--muted)">${open || (a.tasksError ? esc(a.tasksError) : '无')}</td>
       </tr>`
     }).join('')
     const sec = el('section')
@@ -73,9 +74,10 @@
       <div style="overflow:auto;border:1px solid var(--line);border-radius:var(--radius)">
       <table style="width:100%;border-collapse:collapse;font-size:12px">
         <thead><tr style="background:var(--surface-2);color:var(--muted);text-align:left">
-          <th style="padding:6px 8px">账号</th><th style="padding:6px 8px">已完成</th>
-          <th style="padding:6px 8px">进行中</th><th style="padding:6px 8px">待接取</th><th style="padding:6px 8px">未完成</th>
-        </tr></thead><tbody>${rows}</tbody></table></div>`
+          <th style="padding:6px 8px;white-space:nowrap">账号</th><th style="padding:6px 8px;white-space:nowrap">已完成</th>
+          <th style="padding:6px 8px;white-space:nowrap">进行中</th><th style="padding:6px 8px;white-space:nowrap">待接取</th><th style="padding:6px 8px;white-space:nowrap">未完成</th>
+        </tr></thead><tbody>${rows}</tbody></table></div>
+      <p style="margin:6px 0 0;font-size:11px;color:var(--muted)">已完成只统计插件能自动做的任务；标「需本人」的要你自己去 WorkBuddy 里点。</p>`
     autoPanel.insertAdjacentElement('afterend', sec)
   }
 })()

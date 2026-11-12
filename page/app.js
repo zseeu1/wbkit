@@ -134,6 +134,17 @@ function actionZh(a) {
 }
 
 // 今天是否已签到：已签到时不再显示「签到」按钮，避免和状态胶囊重复
+// 成长的唯一口径：按钮和状态点都从这里取，避免「按钮已完成、点还是橙色」。
+// manual（unforgeable）任务必须本人去点，自动流水线永远做不完，不能算进完成度。
+function growthState(a) {
+  const ts = a.taskStats
+  if (!ts) return { known: false, done: false, progress: false }
+  const total = Number(ts.autoTotal ?? ts.total) || 0
+  const done = Number(ts.autoDone ?? ts.done) || 0
+  const active = Number(ts.active) || 0
+  return { known: true, done: total > 0 && done >= total, progress: done > 0 || active > 0 }
+}
+
 const actionDone = (action, a) => {
   if (action === 'checkin') return checkedToday(a)
   if (action === 'travel') {
@@ -142,12 +153,7 @@ const actionDone = (action, a) => {
     const la = a.lastAction
     return isTraveling || (la && la.action === 'travel' && la.ok)
   }
-  if (action === 'growth') {
-    const ts = a.taskStats
-    const allDone = !!(ts && ts.done === ts.total && ts.notAccepted === 0)
-    const la = a.lastAction
-    return allDone || (la && la.action === 'growth' && la.ok)
-  }
+  if (action === 'growth') return growthState(a).done
   return false
 }
 
@@ -297,10 +303,16 @@ function compactRow(a, initialOpen = false) {
   addDot(a.error || a.health === 'error' ? 'warn' : a.health === 'ok' ? 'ok' : 'warn', a.error ? '登录异常' : a.health === 'ok' ? '可用' : a.healthNote || '待实测')
   const signed = checkedToday(a)
   addDot(signed ? 'ok' : '', signed ? '已签到' : '未签到')
+  const gs = growthState(a)
   const tsDot = a.taskStats
-  const gDone = !!(tsDot && tsDot.done === tsDot.total && tsDot.notAccepted === 0)
-  const gProgress = !!(tsDot && (tsDot.active > 0 || tsDot.done > 0))
-  addDot(gDone ? 'ok' : gProgress ? 'warn' : '', gDone ? '成长完成' : tsDot ? `成长 ${tsDot.done}/${tsDot.total}` : '无成长任务')
+  addDot(
+    gs.done ? 'ok' : gs.progress ? 'warn' : '',
+    gs.done
+      ? (tsDot && tsDot.manual ? `成长完成，另有 ${tsDot.manual} 项需本人完成` : '成长完成')
+      : tsDot
+        ? `成长 ${tsDot.autoDone ?? tsDot.done}/${tsDot.autoTotal ?? tsDot.total}${tsDot.manual ? `，需本人 ${tsDot.manual}` : ''}`
+        : '无成长任务',
+  )
   const tvDot = travelRowOf(a)
   const travelCls = tvDot?.state === 'traveling' ? 'ok' : tvDot?.dailyLimitReached ? 'ok' : ''
   addDot(travelCls, tvDot?.state === 'traveling' ? '旅行中' : tvDot?.dailyLimitReached ? '今日已达上限' : '可旅行')
@@ -377,7 +389,10 @@ function compactRow(a, initialOpen = false) {
 
   const ts = a.taskStats
   const gr = secAct('成长', 'growth')
-  gr.append(kv(el('span', null, ts ? `任务 ${ts.done}/${ts.total}` : a.tasksError ? '读取失败' : '暂无任务快照'), el('span', 'c-muted', ts ? `进行中 ${ts.active} · 待接取 ${ts.notAccepted}` : '')))
+  gr.append(kv(
+    el('span', null, ts ? `任务 ${ts.autoDone ?? ts.done}/${ts.autoTotal ?? ts.total}` : a.tasksError ? '读取失败' : '暂无任务快照'),
+    el('span', 'c-muted', ts ? `进行中 ${ts.active}，待接取 ${ts.notAccepted}${ts.manual ? `，需本人 ${ts.manual}` : ''}` : ''),
+  ))
   for (const t of (a.tasks || []).filter((x) => !(x.target > 0 && x.current >= x.target)).slice(0, 3)) {
     const trow = el('div', 'c-task-row')
     trow.append(el('span', 'c-task-name', t.title), el('span', 'c-task-meta', `${t.current}/${t.target}${t.reward ? ` · +${t.reward}` : ''}`))
@@ -448,8 +463,22 @@ function paintControl() {
   if (ck.at) time.value = ck.at
   const isOn = ck.enabled === true
 
-  sub.textContent = isOn ? `已开，${ck.at}（±3 分钟防风控）` : '关'
+  const signed = accounts().filter((a) => checkedToday(a)).length
+  const total = accounts().length
+  const base = isOn ? `已开，${ck.at}（±3 分钟防风控）` : '关'
+  sub.textContent = total ? `${base}。今天已签 ${signed}/${total}` : base
+  // 每个账号一行状态：原生插件 / 插件钩子签过也算，不用 wbkit 自己跑过
   rows.replaceChildren()
+  for (const a of accounts()) {
+    const ckRow = checkinRowOf(a)
+    const ok = checkedToday(a)
+    const line = el('span', 'ck-acc')
+    line.append(el('span', 'ck-name', a.label))
+    line.append(el('span', `pill ${ok ? 'ok' : 'warn'}`, ok ? '已签到' : '未签到'))
+    if (ckRow?.at) line.append(el('span', 'ck-when', md(ckRow.at)))
+    else if (a.checkin?.at) line.append(el('span', 'ck-when', md(a.checkin.at)))
+    rows.append(line)
+  }
 
   const save = async (patch) => {
     try {
