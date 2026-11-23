@@ -36,6 +36,57 @@ test('2049 这类占位到期值不当成作废时间', () => {
   assert.equal(s.packages[0].runsOutAt, 0)
 })
 
+test('国际版：CapacityRemain 恒等于总量时，改取 CycleCapacity* 真实读数', () => {
+  const s = summarise([
+    {
+      PackageName: 'Free Plan Subscription',
+      CapacitySize: 100,
+      CapacityRemain: 100,
+      CapacityUsed: 0,
+      CapacitySizePrecise: 100,
+      CapacityRemainPrecise: 100,
+      CapacityUsedPrecise: 0,
+      CycleCapacitySizePrecise: 100,
+      CycleCapacityRemainPrecise: 92.77,
+      CycleCapacityUsedPrecise: 7.23,
+      CycleEndTime: '2026-11-30 23:59:59',
+    },
+  ], NOW)
+  assert.equal(s.balance, 92.77)
+  assert.equal(s.size, 100)
+  assert.equal(s.used, 7.23)
+  assert.equal(s.detail[0].balance, 92.77)
+  assert.equal(s.detail[0].size, 100)
+  const u = asUsage(s, { uid: 'u1', accountId: 'ai' })
+  assert.equal(u.windows[0].display, '92.77 / 100')
+  assert.equal(u.windows[0].balance, 92.77)
+  assert.equal(u.windows[0].limit, 100)
+})
+
+test('取值优先级：CycleCapacity*Precise → CycleCapacity* → Capacity*Precise → Capacity*', () => {
+  const base = { PackageName: 'p', CapacitySize: 100, CapacityRemain: 100, CapacityUsed: 0 }
+  // CycleCapacityRemain（整数）要盖过 CapacityRemain
+  assert.equal(summarise([{ ...base, CycleCapacityRemain: 30 }], NOW).balance, 30)
+  // CycleCapacityRemainPrecise 又盖过 CycleCapacityRemain
+  assert.equal(summarise([{ ...base, CycleCapacityRemain: 30, CycleCapacityRemainPrecise: 12.5 }], NOW).balance, 12.5)
+})
+
+test('三量互补：只给总量和余额时，已用按差值补出（0 是有效读数）', () => {
+  const s = summarise([{ PackageName: 'p', CycleCapacitySize: 100, CycleCapacityRemain: 40, CycleEndTime: '2026-11-30 23:59:59' }], NOW)
+  assert.equal(s.balance, 40)
+  assert.equal(s.size, 100)
+  assert.equal(s.used, 60)
+})
+
+test('国内版：两类字段同步扣减，结果与旧口径一致', () => {
+  const s = summarise([
+    { PackageName: 'p', CapacitySize: 100, CapacityRemain: 24, CapacityUsed: 76, CycleCapacitySize: 100, CycleCapacityRemain: 24, CycleCapacityUsed: 76, CycleEndTime: '2026-11-30 23:59:59' },
+  ], NOW)
+  assert.equal(s.balance, 24)
+  assert.equal(s.size, 100)
+  assert.equal(s.used, 76)
+})
+
 test('asUsage 给出 magpie 的窗口结构且不含任何令牌', () => {
   const u = asUsage(summarise(accounts, NOW), { access: 'SECRET-TOKEN', uid: 'u1', accountId: '账号A' })
   assert.equal(u.windows.length > 0, true)
