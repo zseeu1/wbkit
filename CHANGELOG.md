@@ -1,5 +1,13 @@
 # 更新记录
 
+## v0.5.11
+
+**修：国际版账号积分余额恒显示 100 / 100**
+
+- 修：`lib/quota.mjs` 的 `summarise()` 与逐包 `detail` 取的是资源包**总量**字段 `CapacityRemain` / `CapacitySize` / `CapacityUsed`，而国际版（`www.workbuddy.ai`）的消耗只记在**本期周期**字段 `CycleCapacity*` 上、`CapacityRemain` 恒等于总量。结果账号页永远显示 `100 / 100`、used 0。现在改走 `CycleCapacity*Precise → CycleCapacity* → Capacity*Precise → Capacity*` 优先取值，与 `lib/engine/credits.mjs` 的 `parsePackageAccount` 同口径（含三量互补、0 视为有效读数），派生的合计与 `asUsage` 窗口显示同步修正
+- 国内版两类字段同步扣减，结果保持不变
+- 测试 77 条（`test/quota.test.mjs` 新增 4 条：国际版周期读数、取值优先级、三量互补、国内版不变）
+
 ## v0.5.10
 
 **修：签到状态读不到、成长「已完成」与状态点打架**
